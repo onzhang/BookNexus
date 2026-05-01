@@ -1,0 +1,85 @@
+spring:
+  # ===== 数据源配置（Druid 连接池） =====
+  datasource:
+    # 测试数据库，与开发库隔离
+    url: jdbc:mysql://localhost:3306/booknexus_test?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      # 连接池初始/最小/最大连接数
+      initial-size: 5
+      min-idle: 5
+      max-active: 20
+      # 获取连接最大等待时间（毫秒）
+      max-wait: 60000
+      # Druid 监控页面
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+        login-username: admin
+        login-password: admin
+      filter:
+        # SQL 统计与慢 SQL 日志
+        stat:
+          enabled: true
+          slow-sql-millis: 2000
+          log-slow-sql: true
+        # SQL 注入防火墙
+        wall:
+          enabled: true
+
+  # ===== Redis 缓存配置（Lettuce 客户端） =====
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 1  # 使用 DB1 避免与开发数据冲突
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 8   # 最大连接数（含借出不归还）
+          max-idle: 4     # 最大空闲连接数
+          min-idle: 2     # 最小空闲连接数
+
+  # ===== RabbitMQ 消息队列配置 =====
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+    listener:
+      simple:
+        concurrency: 2      # 初始消费者数
+        max-concurrency: 5  # 最大消费者数
+        retry:
+          enabled: true
+          max-attempts: 3       # 最大重试次数
+          initial-interval: 1000ms  # 重试间隔
+        prefetch: 1  # 每次拉取 1 条消息
+
+  # ===== Elasticsearch 搜索引擎配置 =====
+  elasticsearch:
+    uris: http://localhost:9200
+    connection-timeout: 5s
+    socket-timeout: 30s
+
+# ===== MyBatis-Plus 配置 =====
+mybatis-plus:
+  configuration:
+    # 测试环境打印 SQL（方便调试）
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# ===== 日志级别配置 =====
+logging:
+  level:
+    com.zjw.booknexus: debug  # 项目包路径输出 debug 级别日志
+
+# ===== MinIO 对象存储配置 =====
+minio:
+  endpoint: http://localhost:9000
+  access-key: minioadmin
+  secret-key: minioadmin
+  bucket: booknexus-test

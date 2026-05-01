@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: BookNexus
+
+  profiles:
+    active: dev
+
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    default-property-inclusion: non_null
+
+server:
+  port: 8080
+
+mybatis-plus:
+  type-aliases-package: com.zjw.booknexus.entity
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: is_deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  configuration:
+    map-underscore-to-camel-case: true
+
+knife4j:
+  enable: true
+  openapi:
+    title: BookNexus API
+    description: 图书管理系统接口文档
+    version: v1.0
+    group:
+      default:
+        group-name: default
+        api-rule: package
+        api-rule-resources:
+          - com.zjw.booknexus
+
+xxl:
+  job:
+    admin-addresses:
+    app-name: booknexus-job
+    port: 9999
+    log-path: /data/applogs/xxl-job
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs

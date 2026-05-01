@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  BookNexus Logback 日志配置
+  作者：张俊文
+  日期：2026-04-29
+  说明：控制台 + 文件滚动日志，支持 MDC 请求追踪
+-->
+<configuration>
+    <!-- 应用名称 -->
+    <property name="APP_NAME" value="booknexus"/>
+    <!-- 日志存储路径，默认 ./logs -->
+    <property name="LOG_PATH" value="${LOG_PATH:-./logs}"/>
+    <!-- 日志格式：时间 | 线程 | 级别 | 类名 | MDC requestId | 消息 -->
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{requestId}] - %msg%n"/>
+
+    <!-- 控制台 appender：开发时查看实时日志 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 文件 appender：按天滚动，保留 30 天历史 -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${APP_NAME}.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${APP_NAME}.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 根日志级别 INFO，同时输出到控制台和文件 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+</configuration>

@@ -1,0 +1,117 @@
+{
+  "index_patterns": ["booknexus_books"],
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "refresh_interval": "5s",
+    "analysis": {
+      "analyzer": {
+        "ik_smart_pinyin": {
+          "type": "custom",
+          "tokenizer": "ik_smart",
+          "filter": ["pinyin_filter", "lowercase"]
+        },
+        "ik_max_word_pinyin": {
+          "type": "custom",
+          "tokenizer": "ik_max_word",
+          "filter": ["pinyin_filter", "lowercase"]
+        }
+      },
+      "filter": {
+        "pinyin_filter": {
+          "type": "pinyin",
+          "keep_first_letter": true,
+          "keep_full_pinyin": false,
+          "keep_joined_full_pinyin": true,
+          "limit_first_letter_length": 16,
+          "remove_duplicated_term": true
+        }
+      }
+    }
+  },
+  "mappings": {
+    "dynamic": "strict",
+    "properties": {
+      "id": {
+        "type": "long"
+      },
+      "title": {
+        "type": "text",
+        "analyzer": "ik_max_word_pinyin",
+        "search_analyzer": "ik_smart",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 200
+          },
+          "suggest": {
+            "type": "completion",
+            "analyzer": "ik_smart"
+          }
+        }
+      },
+      "author": {
+        "type": "text",
+        "analyzer": "ik_smart_pinyin",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 100
+          }
+        }
+      },
+      "isbn": {
+        "type": "keyword"
+      },
+      "publisher": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 100
+          }
+        }
+      },
+      "description": {
+        "type": "text",
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_smart"
+      },
+      "category_ids": {
+        "type": "long"
+      },
+      "category_names": {
+        "type": "keyword"
+      },
+      "bookshelf_id": {
+        "type": "long"
+      },
+      "bookshelf_name": {
+        "type": "keyword"
+      },
+      "status": {
+        "type": "keyword"
+      },
+      "stock": {
+        "type": "integer"
+      },
+      "available_stock": {
+        "type": "integer"
+      },
+      "publish_date": {
+        "type": "date",
+        "format": "yyyy-MM-dd"
+      },
+      "cover_url": {
+        "type": "keyword",
+        "index": false
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "updated_at": {
+        "type": "date"
+      }
+    }
+  }
+}
