@@ -1,5 +1,15 @@
+<!--
+  ============================================================
+  BookDetail.vue — 书籍详情页
+  @description 展示书籍的详细信息（作者、ISBN、出版社、分类、简介等），
+               提供借阅操作入口（可借时显示借阅按钮，已借出提示状态）。
+  @author 张俊文
+  @date 2026-05-01
+  ============================================================
+-->
 <template>
   <div class="book-detail-page">
+    <!-- 返回按钮 -->
     <div class="back-row">
       <el-button text @click="goBack">
         <el-icon><ArrowLeft /></el-icon>
@@ -8,8 +18,10 @@
     </div>
 
     <el-card v-loading="loading" shadow="hover" class="detail-card">
+      <!-- 书籍详情 -->
       <template v-if="!loading && book">
         <div class="book-detail">
+          <!-- 封面图 -->
           <div class="book-cover-large">
             <img
               v-if="book.coverUrl"
@@ -19,6 +31,7 @@
             />
             <el-icon v-else :size="128" class="cover-placeholder"><Picture /></el-icon>
           </div>
+          <!-- 书籍元信息 -->
           <div class="book-meta">
             <h1 class="book-title">{{ book.title }}</h1>
             <div class="book-status-badge">
@@ -45,10 +58,12 @@
               </el-descriptions-item>
               <el-descriptions-item label="上架时间">{{ book.createdAt }}</el-descriptions-item>
             </el-descriptions>
+            <!-- 内容简介 -->
             <div v-if="book.description" class="book-description">
               <h3>内容简介</h3>
               <p>{{ book.description }}</p>
             </div>
+            <!-- 操作区 -->
             <div class="book-actions">
               <el-button
                 v-if="book.status === 'AVAILABLE'"
@@ -67,6 +82,7 @@
         </div>
       </template>
 
+      <!-- 书籍不存在 -->
       <el-empty v-if="!loading && !book" description="书籍不存在" />
     </el-card>
   </div>
@@ -83,10 +99,14 @@ import type { BookVO } from '@/types'
 const route = useRoute()
 const router = useRouter()
 
+/** 当前书籍数据 */
 const book = ref<BookVO | null>(null)
+/** 页面加载状态 */
 const loading = ref(false)
+/** 借阅按钮加载状态 */
 const borrowing = ref(false)
 
+/** 书籍状态 → 中文文本映射 */
 const statusTextMap: Record<string, string> = {
   AVAILABLE: '可借',
   BORROWED: '已借出',
@@ -94,6 +114,7 @@ const statusTextMap: Record<string, string> = {
   LOST: '丢失'
 }
 
+/** 书籍状态 → Element Plus Tag 类型映射 */
 const statusTagMap: Record<string, string> = {
   AVAILABLE: 'success',
   BORROWED: 'warning',
@@ -101,18 +122,28 @@ const statusTagMap: Record<string, string> = {
   LOST: 'info'
 }
 
+/**
+ * 根据状态码返回中文文本
+ * @param status - 状态码
+ */
 function statusText(status: string) {
   return statusTextMap[status] || status
 }
 
+/**
+ * 根据状态码返回标签类型
+ * @param status - 状态码
+ */
 function statusTagType(status: string) {
   return statusTagMap[status] || 'info'
 }
 
+/** 返回上一页 */
 function goBack() {
   router.back()
 }
 
+/** 获取书籍详情 */
 async function fetchBook() {
   const id = route.params.id
   if (!id) return
@@ -127,6 +158,7 @@ async function fetchBook() {
   }
 }
 
+/** 借阅当前书籍 */
 async function handleBorrow() {
   if (!book.value) return
   borrowing.value = true

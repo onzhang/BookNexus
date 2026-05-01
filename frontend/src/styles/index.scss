@@ -1,3 +1,13 @@
+/**
+ * BookNexus — 全局样式
+ *
+ * @description 全局 CSS 重置、自定义 CSS 变量（Element Plus 色系扩展）、
+ *              基础标签样式统一。所有 CSS 变量在 :root 中定义，各组件直接引用。
+ * @author 张俊文
+ * @date 2026-05-01
+ */
+
+/* ----- 全局重置 ----- */
 *,
 *::before,
 *::after {
@@ -34,6 +44,7 @@ img {
   height: auto;
 }
 
+/* ----- 自定义 CSS 变量（基于 Element Plus 色板） ----- */
 :root {
   --primary-color: #409EFF;
   --success-color: #67C23A;

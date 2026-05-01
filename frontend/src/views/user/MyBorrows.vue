@@ -1,3 +1,12 @@
+<!--
+  ============================================================
+  MyBorrows.vue — 我的借阅记录
+  @description 展示当前用户的借阅记录列表，含书籍封面/书名/作者/
+               借阅日期/状态/罚款信息，支持续借和归还操作。
+  @author 张俊文
+  @date 2026-05-01
+  ============================================================
+-->
 <template>
   <div class="borrows-page">
     <el-card shadow="hover">
@@ -5,15 +14,18 @@
         <span class="card-title">我的借阅记录</span>
       </template>
 
+      <!-- 加载骨架屏 -->
       <div v-if="loading" class="loading-wrap">
         <el-skeleton :rows="5" animated />
       </div>
 
+      <!-- 空状态 -->
       <div v-else-if="records.length === 0" class="empty-wrap">
         <el-empty description="暂无借阅记录" />
       </div>
 
       <template v-else>
+        <!-- 借阅表格 -->
         <el-table
           :data="records"
           stripe
@@ -67,6 +79,7 @@
           </el-table-column>
         </el-table>
 
+        <!-- 分页 -->
         <div class="pagination-wrap">
           <el-pagination
             v-model:current-page="page"
@@ -89,12 +102,18 @@ import { ElMessage } from 'element-plus'
 import api from '@/api'
 import type { BorrowRecordVO, PageResult } from '@/types'
 
+/** 借阅记录列表 */
 const records = ref<BorrowRecordVO[]>([])
+/** 表格加载状态 */
 const loading = ref(false)
+/** 当前页码 */
 const page = ref(1)
+/** 每页大小 */
 const size = ref(10)
+/** 总记录数 */
 const total = ref(0)
 
+/** 借阅状态 → 中文文本映射 */
 const statusTextMap: Record<string, string> = {
   PENDING: '待确认',
   BORROWED: '借阅中',
@@ -102,6 +121,7 @@ const statusTextMap: Record<string, string> = {
   RETURNED: '已归还'
 }
 
+/** 借阅状态 → Element Plus Tag 类型映射 */
 const statusTagMap: Record<string, string> = {
   PENDING: 'warning',
   BORROWED: '',
@@ -109,14 +129,23 @@ const statusTagMap: Record<string, string> = {
   RETURNED: 'info'
 }
 
+/**
+ * 根据状态码返回中文文本
+ * @param status - 状态码
+ */
 function statusText(status: string) {
   return statusTextMap[status] || status
 }
 
+/**
+ * 根据状态码返回标签类型
+ * @param status - 状态码
+ */
 function statusTagType(status: string) {
   return statusTagMap[status] || 'info'
 }
 
+/** 获取借阅记录列表（分页） */
 async function fetchRecords() {
   loading.value = true
   try {
@@ -134,6 +163,10 @@ async function fetchRecords() {
   }
 }
 
+/**
+ * 归还借阅
+ * @param id - 借阅记录 ID
+ */
 async function handleReturn(id: number) {
   try {
     await api.put(`/v1/user/borrows/${id}/return`)
@@ -144,6 +177,10 @@ async function handleReturn(id: number) {
   }
 }
 
+/**
+ * 续借
+ * @param id - 借阅记录 ID
+ */
 async function handleRenew(id: number) {
   try {
     await api.put(`/v1/user/borrows/${id}/renew`)

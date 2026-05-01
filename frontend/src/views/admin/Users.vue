@@ -1,5 +1,15 @@
+<!--
+  ============================================================
+  Users.vue — 管理端用户管理
+  @description 管理员管理用户的页面，支持搜索、分页列表、编辑邮箱/手机号、
+               启用/禁用状态切换。
+  @author 张俊文
+  @date 2026-05-01
+  ============================================================
+-->
 <template>
   <div class="users-page">
+    <!-- 搜索栏 -->
     <el-card shadow="hover">
       <div class="search-bar">
         <el-input
@@ -18,6 +28,7 @@
       </div>
     </el-card>
 
+    <!-- 用户列表表格 -->
     <el-card shadow="hover" class="table-card">
       <el-table :data="userList" stripe border v-loading="loading" style="width: 100%">
         <el-table-column prop="id" label="ID" width="80" />
@@ -54,6 +65,7 @@
 
       <el-empty v-if="!loading && userList.length === 0" description="暂无用户" />
 
+      <!-- 分页 -->
       <div class="pagination-wrap" v-if="total > 0">
         <el-pagination
           v-model:current-page="page"
@@ -66,6 +78,7 @@
       </div>
     </el-card>
 
+    <!-- 编辑用户对话框 -->
     <el-dialog
       v-model="dialogVisible"
       title="编辑用户"
@@ -99,29 +112,42 @@ import api from '@/api'
 import type { User } from '@/types'
 import type { FormInstance, FormRules } from 'element-plus'
 
+/** 表格加载状态 */
 const loading = ref(false)
+/** 提交按钮加载状态 */
 const submitting = ref(false)
+/** 用户列表数据 */
 const userList = ref<User[]>([])
+/** 当前页码 */
 const page = ref(1)
+/** 每页大小 */
 const size = ref(10)
+/** 总记录数 */
 const total = ref(0)
+/** 搜索关键字 */
 const keyword = ref('')
 
+/** 对话框是否可见 */
 const dialogVisible = ref(false)
+/** 当前编辑的用户 */
 const editUser = ref<User | null>(null)
+/** 表单引用 */
 const formRef = ref<FormInstance>()
 
+/** 编辑表单数据 */
 const form = reactive({
   email: '',
   phone: ''
 })
 
+/** 表单校验规则（邮箱格式验证） */
 const rules: FormRules = {
   email: [
     { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
   ]
 }
 
+/** 获取用户列表（分页 + 搜索） */
 async function fetchUsers() {
   loading.value = true
   try {
@@ -139,17 +165,23 @@ async function fetchUsers() {
   }
 }
 
+/** 搜索（重置到第一页） */
 function handleSearch() {
   page.value = 1
   fetchUsers()
 }
 
+/** 重置搜索条件 */
 function resetSearch() {
   keyword.value = ''
   page.value = 1
   fetchUsers()
 }
 
+/**
+ * 打开编辑对话框
+ * @param user - 要编辑的用户对象
+ */
 function openEditDialog(user: User) {
   editUser.value = user
   form.email = user.email || ''
@@ -157,11 +189,13 @@ function openEditDialog(user: User) {
   dialogVisible.value = true
 }
 
+/** 关闭对话框后重置表单 */
 function resetForm() {
   formRef.value?.resetFields()
   editUser.value = null
 }
 
+/** 提交用户编辑 */
 async function handleSubmit() {
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid || !editUser.value) return
@@ -182,6 +216,11 @@ async function handleSubmit() {
   }
 }
 
+/**
+ * 切换用户启用/禁用状态
+ * @param user - 目标用户
+ * @param enabled - 是否启用
+ */
 async function handleStatusChange(user: User, enabled: boolean) {
   try {
     await api.put(`/v1/admin/users/${user.id}`, {

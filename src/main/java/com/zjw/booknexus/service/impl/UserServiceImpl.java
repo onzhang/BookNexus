@@ -21,6 +21,17 @@ import org.springframework.util.StringUtils;
 
 import java.util.List;
 
+/**
+ * 用户服务实现类，实现用户管理相关的业务逻辑。
+ * <p>
+ * 处理用户的分页查询、详情查看、信息更新及账户状态管理。
+ * 更新和状态变更操作中设有保护机制：禁止管理员禁用自身账户，
+ * 防止误操作导致管理后台无法登录。
+ * </p>
+ *
+ * @author 张俊文
+ * @since 2026-04-30
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -28,6 +39,16 @@ public class UserServiceImpl implements UserService {
 
     private final UserMapper userMapper;
 
+    /**
+     * 分页查询用户列表。
+     * <p>
+     * 支持按关键词（用户名/邮箱）进行模糊搜索，
+     * 结果按创建时间倒序排列，返回的数据不包含密码等敏感字段。
+     * </p>
+     *
+     * @param req 分页查询参数，支持关键词搜索
+     * @return 用户信息分页结果
+     */
     @Override
     public PageResult<UserVO> page(UserPageReq req) {
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
@@ -49,6 +70,16 @@ public class UserServiceImpl implements UserService {
         return new PageResult<>(records, page.getTotal(), page.getCurrent(), page.getSize());
     }
 
+    /**
+     * 根据 ID 查询用户详情。
+     * <p>
+     * 查询用户实体并转换为不含敏感字段的视图对象返回。
+     * </p>
+     *
+     * @param id 用户 ID
+     * @return 用户视图对象
+     * @throws BusinessException 当用户不存在时抛出 404 异常
+     */
     @Override
     public UserVO getById(Long id) {
         User user = userMapper.selectById(id);
@@ -58,6 +89,19 @@ public class UserServiceImpl implements UserService {
         return toVO(user);
     }
 
+    /**
+     * 更新用户信息。
+     * <p>
+     * 支持部分字段更新：邮箱、电话、状态。
+     * 进行状态更新时加入保护逻辑：若当前操作的管理员试图禁用自身账户，
+     * 则抛出 403 禁止操作异常，防止误操作导致账户锁定。
+     * </p>
+     *
+     * @param id  用户 ID
+     * @param req 用户更新请求，包含需要更新的字段
+     * @throws BusinessException 当用户不存在时抛出 404 异常，
+     *         当管理员尝试禁用自身时抛出 403 异常
+     */
     @Override
     @Transactional
     public void update(Long id, UserUpdateReq req) {
@@ -83,6 +127,19 @@ public class UserServiceImpl implements UserService {
         userMapper.updateById(user);
     }
 
+    /**
+     * 启用/禁用用户账户。
+     * <p>
+     * 直接更新指定用户的状态字段为 ENABLED 或 DISABLED。
+     * 含自身保护逻辑：禁止管理员禁用自身账户，
+     * 防止误操作导致管理后台无法登录。
+     * </p>
+     *
+     * @param id     用户 ID
+     * @param status 目标状态值（ENABLED 或 DISABLED）
+     * @throws BusinessException 当用户不存在时抛出 404 异常，
+     *         当管理员尝试禁用自身时抛出 403 异常
+     */
     @Override
     @Transactional
     public void updateStatus(Long id, String status) {
@@ -98,6 +155,16 @@ public class UserServiceImpl implements UserService {
         userMapper.updateById(user);
     }
 
+    /**
+     * 将用户实体转换为视图对象。
+     * <p>
+     * 仅拷贝非敏感字段（排除密码），
+     * 将 LocalDateTime 类型的创建时间格式化为字符串。
+     * </p>
+     *
+     * @param user 用户实体
+     * @return 用户视图对象
+     */
     private UserVO toVO(User user) {
         UserVO vo = new UserVO();
         vo.setId(user.getId());

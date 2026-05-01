@@ -28,6 +28,18 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * 图书服务实现类，实现图书相关的完整业务逻辑。
+ * <p>
+ * 处理图书的分页搜索、详情查询、创建、更新和删除操作。
+ * 创建和更新操作涉及 ISBN 唯一性校验、图书与分类的关联关系维护、
+ * 以及书架名称等关联信息的装配。使用 Hutool BeanUtil 实现属性拷贝，
+ * MyBatis-Plus 实现数据访问，事务注解确保数据一致性。
+ * </p>
+ *
+ * @author 张俊文
+ * @since 2026-04-30
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -38,6 +50,17 @@ public class BookServiceImpl implements BookService {
     private final BookshelfMapper bookshelfMapper;
     private final CategoryMapper categoryMapper;
 
+    /**
+     * 分页查询图书。
+     * <p>
+     * 构建动态查询条件：关键词模糊匹配（书名、作者、ISBN）、
+     * 图书状态精确匹配、书架 ID 精确匹配。结果按创建时间倒序排列。
+     * 查询结果流式转换为 BookVO，包含分类名称和书架名称等关联信息。
+     * </p>
+     *
+     * @param req 分页查询参数
+     * @return 图书分页结果，每个元素包含完整的分类和书架信息
+     */
     @Override
     public PageResult<BookVO> page(BookPageReq req) {
         LambdaQueryWrapper<Book> wrapper = new LambdaQueryWrapper<>();
@@ -64,6 +87,17 @@ public class BookServiceImpl implements BookService {
         return new PageResult<>(voList, result.getTotal(), result.getCurrent(), result.getSize());
     }
 
+    /**
+     * 根据 ID 查询图书详情。
+     * <p>
+     * 查询图书实体并转换为 BookVO，若图书不存在则抛出 404 异常。
+     * 转换过程会查询并填充关联的分类名称列表和书架名称。
+     * </p>
+     *
+     * @param id 图书 ID
+     * @return 图书视图对象，包含分类名称和书架名称
+     * @throws BusinessException 当图书不存在时抛出 404 异常
+     */
     @Override
     public BookVO getById(Long id) {
         Book book = bookMapper.selectById(id);
@@ -73,6 +107,19 @@ public class BookServiceImpl implements BookService {
         return toBookVO(book);
     }
 
+    /**
+     * 创建图书。
+     * <p>
+     * 校验 ISBN 唯一性，使用 BeanUtil 拷贝属性创建图书实体，
+     * 设置初始状态为 AVAILABLE、库存为 1、可用库存为 1。
+     * 持久化图书后根据分类 ID 列表建立图书-分类关联关系。
+     * 整个操作在一个事务中完成。
+     * </p>
+     *
+     * @param req 图书创建请求，包含图书基本信息及分类 ID 列表
+     * @return 新创建的图书视图对象
+     * @throws BusinessException 当 ISBN 已存在时抛出 409 异常
+     */
     @Override
     @Transactional
     public BookVO create(BookCreateReq req) {
@@ -91,6 +138,21 @@ public class BookServiceImpl implements BookService {
         return toBookVO(book);
     }
 
+    /**
+     * 更新图书信息。
+     * <p>
+     * 根据 ID 查询待更新图书，依次对非空字段进行部分更新。
+     * 若更新 ISBN，需校验新 ISBN 的唯一性（排除当前图书自身）。
+     * 若提供分类 ID 列表，先删除原有图书-分类关联关系再重新建立。
+     * 整个操作在一个事务中完成。
+     * </p>
+     *
+     * @param id  图书 ID
+     * @param req 图书更新请求，包含需要更新的字段
+     * @return 更新后的图书视图对象（重新从数据库查询）
+     * @throws BusinessException 当图书不存在时抛出 404 异常，
+     *         当 ISBN 与其他图书重复时抛出 409 异常
+     */
     @Override
     @Transactional
     public BookVO update(Long id, BookUpdateReq req) {
@@ -137,6 +199,16 @@ public class BookServiceImpl implements BookService {
         return toBookVO(bookMapper.selectById(id));
     }
 
+    /**
+     * 删除图书。
+     * <p>
+     * 物理删除指定 ID 的图书记录，操作不可恢复。
+     * 删除前校验图书是否存在。
+     * </p>
+     *
+     * @param id 要删除的图书 ID
+     * @throws BusinessException 当图书不存在时抛出 404 异常
+     */
     @Override
     @Transactional
     public void delete(Long id) {
@@ -147,6 +219,17 @@ public class BookServiceImpl implements BookService {
         bookMapper.deleteById(id);
     }
 
+    /**
+     * 校验 ISBN 唯一性。
+     * <p>
+     * 根据 ISBN 查询数据库，若存在记录则抛出重复异常。
+     * excludeId 参数用于更新场景排除当前图书自身。
+     * </p>
+     *
+     * @param isbn      ISBN 编号
+     * @param excludeId 需要排除的图书 ID（更新时使用），新建时传 null
+     * @throws BusinessException 当 ISBN 已存在时抛出 409 异常
+     */
     private void checkDuplicateIsbn(String isbn, Long excludeId) {
         LambdaQueryWrapper<Book> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Book::getIsbn, isbn);
@@ -158,6 +241,16 @@ public class BookServiceImpl implements BookService {
         }
     }
 
+    /**
+     * 保存图书-分类关联关系。
+     * <p>
+     * 遍历分类 ID 列表，逐条插入关联记录。
+     * 若分类 ID 列表为空则直接返回不执行任何操作。
+     * </p>
+     *
+     * @param bookId      图书 ID
+     * @param categoryIds 分类 ID 列表
+     */
     private void saveCategoryRelations(Long bookId, List<Long> categoryIds) {
         if (CollectionUtil.isEmpty(categoryIds)) {
             return;
@@ -170,6 +263,16 @@ public class BookServiceImpl implements BookService {
         }
     }
 
+    /**
+     * 将图书实体转换为视图对象。
+     * <p>
+     * 使用 BeanUtil 拷贝基础属性，查询并填充关联的分类名称列表和书架名称。
+     * 若图书无分类或未关联书架，对应的字段置为空列表或 null。
+     * </p>
+     *
+     * @param book 图书实体
+     * @return 图书视图对象，包含完整的关联信息
+     */
     private BookVO toBookVO(Book book) {
         BookVO vo = new BookVO();
         BeanUtil.copyProperties(book, vo);

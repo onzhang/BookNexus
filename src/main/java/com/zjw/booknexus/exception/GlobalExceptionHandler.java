@@ -23,8 +23,19 @@ import java.util.stream.Collectors;
 
 /**
  * 全局异常处理器
- * <p>使用 @RestControllerAdvice 统一捕获各层异常，转换为标准 Result 响应格式。
- * 覆盖业务异常、参数校验异常、未知系统异常三大类。</p>
+ * <p>使用 {@code @RestControllerAdvice} 统一捕获 Controller 层及各层抛出的异常，
+ * 转换为标准 {@link com.zjw.booknexus.common.Result Result} 响应格式。</p>
+ *
+ * <p>覆盖的异常类型：</p>
+ * <ul>
+ *   <li>{@link BusinessException} — 业务异常，动态映射 HTTP 状态码</li>
+ *   <li>{@link org.springframework.web.bind.MethodArgumentNotValidException MethodArgumentNotValidException} — {@code @RequestBody} 参数校验失败（400）</li>
+ *   <li>{@link jakarta.validation.ConstraintViolationException ConstraintViolationException} — {@code @RequestParam/@PathVariable} 参数校验失败（400）</li>
+ *   <li>{@link Exception} — 兜底捕获，返回 500 Internal Server Error</li>
+ * </ul>
+ *
+ * @author 张俊文
+ * @since 2026-04-30
  */
 @Slf4j
 @RestControllerAdvice

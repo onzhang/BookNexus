@@ -1,5 +1,15 @@
+<!--
+  ============================================================
+  Home.vue — 用户端首页
+  @description 图书浏览主页，支持搜索书名/作者，以卡片网格形式
+               展示书籍列表，含封面占位、状态标签和分页功能。
+  @author 张俊文
+  @date 2026-05-01
+  ============================================================
+-->
 <template>
   <div class="home-page">
+    <!-- 搜索栏 -->
     <el-card shadow="hover" class="search-card">
       <div class="search-bar">
         <el-input
@@ -17,15 +27,19 @@
       </div>
     </el-card>
 
+    <!-- 书籍网格 -->
     <el-card shadow="hover" class="book-grid-card">
+      <!-- 加载骨架屏 -->
       <div v-if="loading" class="loading-wrap">
         <el-skeleton :rows="3" animated />
       </div>
 
+      <!-- 空状态 -->
       <div v-else-if="books.length === 0" class="empty-wrap">
         <el-empty description="暂无书籍" />
       </div>
 
+      <!-- 书籍卡片网格 -->
       <el-row v-else :gutter="20">
         <el-col
           v-for="book in books"
@@ -65,6 +79,7 @@
         </el-col>
       </el-row>
 
+      <!-- 分页 -->
       <div v-if="total > 0" class="pagination-wrap">
         <el-pagination
           v-model:current-page="page"
@@ -87,13 +102,20 @@ import api from '@/api'
 import type { BookVO, PageResult } from '@/types'
 
 const router = useRouter()
+/** 书籍列表数据 */
 const books = ref<BookVO[]>([])
+/** 加载状态 */
 const loading = ref(false)
+/** 当前页码 */
 const page = ref(1)
+/** 每页大小 */
 const size = ref(8)
+/** 总记录数 */
 const total = ref(0)
+/** 搜索关键字 */
 const keyword = ref('')
 
+/** 书籍状态 → 中文文本映射 */
 const statusTextMap: Record<string, string> = {
   AVAILABLE: '可借',
   BORROWED: '已借出',
@@ -101,6 +123,7 @@ const statusTextMap: Record<string, string> = {
   LOST: '丢失'
 }
 
+/** 书籍状态 → Element Plus Tag 类型映射 */
 const statusTagMap: Record<string, string> = {
   AVAILABLE: 'success',
   BORROWED: 'warning',
@@ -108,18 +131,31 @@ const statusTagMap: Record<string, string> = {
   LOST: 'info'
 }
 
+/**
+ * 根据状态码返回中文文本
+ * @param status - 状态码
+ */
 function statusText(status: string) {
   return statusTextMap[status] || status
 }
 
+/**
+ * 根据状态码返回标签类型
+ * @param status - 状态码
+ */
 function statusTagType(status: string) {
   return statusTagMap[status] || 'info'
 }
 
+/**
+ * 跳转到书籍详情页
+ * @param id - 书籍 ID
+ */
 function goToDetail(id: number) {
   router.push(`/user/books/${id}`)
 }
 
+/** 获取书籍列表（分页 + 搜索） */
 async function fetchBooks() {
   loading.value = true
   try {
@@ -137,6 +173,7 @@ async function fetchBooks() {
   }
 }
 
+/** 搜索（重置到第一页） */
 function handleSearch() {
   page.value = 1
   fetchBooks()

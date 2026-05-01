@@ -31,6 +31,19 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * 借阅服务实现类，实现图书借阅相关的完整业务逻辑。
+ * <p>
+ * 处理用户借书、还书、续借及借阅记录查询，以及管理端的借阅记录管理和强制归还。
+ * 核心业务规则包括：每人最多同时借阅 5 本、每本书默认借期 30 天、
+ * 每本书最多续借 1 次（延长 15 天）、逾期罚金 0.10 元/天。
+ * 借阅操作涉及借阅记录、图书状态、用户信息的多表协同操作，
+ * 关键业务方法均通过 @Transactional 保证事务一致性。
+ * </p>
+ *
+ * @author 张俊文
+ * @since 2026-04-30
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -46,6 +59,21 @@ public class BorrowServiceImpl implements BorrowService {
     private static final int MAX_RENEW_COUNT = 1;
     private static final BigDecimal FINE_PER_DAY = new BigDecimal("0.10");
 
+    /**
+     * 用户借阅图书。
+     * <p>
+     * 执行完整的借阅前校验：图书是否存在、图书状态是否可借阅、
+     * 用户当前借阅中的数量是否未超上限（5 本）、用户是否未借阅该书。
+     * 校验通过后创建借阅记录（借阅日期为当天，应还日期为 30 天后），
+     * 并将图书状态更新为 BORROWED。整个操作在一个事务中完成。
+     * </p>
+     *
+     * @param userId 当前用户 ID
+     * @param req    借阅请求，包含图书 ID
+     * @return 借阅记录视图对象，包含图书名、用户名等关联信息
+     * @throws BusinessException 当图书不存在时抛出 404 异常，
+     *         当图书不可借阅、借阅数量超限或已借阅该书时抛出 409 异常
+     */
     @Override
     @Transactional
     public BorrowRecordVO borrow(Long userId, BorrowReq req) {
@@ -90,6 +118,21 @@ public class BorrowServiceImpl implements BorrowService {
         return buildVO(record, book, user);
     }
 
+    /**
+     * 用户归还图书。
+     * <p>
+     * 根据当前用户 ID 和记录 ID 查询借阅记录，确保只有记录归属人可以执行归还。
+     * 校验记录状态为 BORROWED 或 RENEWED 后方可执行归还操作。
+     * 若归还日期超过应还日期，按 0.10 元/天计算逾期罚金。
+     * 归还后更新借阅记录状态为 RETURNED 并将图书状态恢复为 AVAILABLE。
+     * </p>
+     *
+     * @param userId   当前用户 ID
+     * @param recordId 借阅记录 ID
+     * @return 更新后的借阅记录视图对象
+     * @throws BusinessException 当记录不存在时抛出 404 异常，
+     *         当记录状态不合法时抛出 409 异常
+     */
     @Override
     @Transactional
     public BorrowRecordVO returnBook(Long userId, Long recordId) {
@@ -102,6 +145,19 @@ public class BorrowServiceImpl implements BorrowService {
         return doReturn(record);
     }
 
+    /**
+     * 管理员强制归还图书。
+     * <p>
+     * 管理员可不校验用户身份直接强制归还指定借阅记录的图书，
+     * 适用于用户线下还书或管理员介入的特殊场景。
+     * 归还后自动计算逾期罚金并更新图书状态。
+     * </p>
+     *
+     * @param recordId 借阅记录 ID
+     * @return 更新后的借阅记录视图对象
+     * @throws BusinessException 当记录不存在时抛出 404 异常，
+     *         当记录状态不合法时抛出 409 异常
+     */
     @Override
     @Transactional
     public BorrowRecordVO adminReturnRecord(Long recordId) {
@@ -112,6 +168,19 @@ public class BorrowServiceImpl implements BorrowService {
         return doReturn(record);
     }
 
+    /**
+     * 执行归还核心逻辑。
+     * <p>
+     * 校验借阅记录状态（仅 BORROWED 或 RENEWED 可归还），
+     * 计算逾期天数及罚金（若逾期），更新借阅记录状态为 RETURNED，
+     * 并将对应图书状态恢复为 AVAILABLE。
+     * 该方法为 returnBook 和 adminReturnRecord 的共用逻辑。
+     * </p>
+     *
+     * @param record 借阅记录实体
+     * @return 更新后的借阅记录视图对象
+     * @throws BusinessException 当记录状态不合法时抛出 409 异常
+     */
     private BorrowRecordVO doReturn(BorrowRecord record) {
         String status = record.getStatus();
         if (!BorrowStatus.BORROWED.name().equals(status) && !BorrowStatus.RENEWED.name().equals(status)) {
@@ -141,6 +210,20 @@ public class BorrowServiceImpl implements BorrowService {
         return buildVO(record, book, user);
     }
 
+    /**
+     * 用户续借图书。
+     * <p>
+     * 校验借阅记录归属当前用户，校验记录状态为 BORROWED 或 RENEWED，
+     * 校验续借次数是否已达上限（最多 1 次）。
+     * 通过校验后续借日期延长 15 天，续借次数加 1，状态更新为 RENEWED。
+     * </p>
+     *
+     * @param userId   当前用户 ID
+     * @param recordId 借阅记录 ID
+     * @return 续借后的借阅记录视图对象
+     * @throws BusinessException 当记录不存在时抛出 404 异常，
+     *         当状态不合法或续借次数已达上限时抛出 409 异常
+     */
     @Override
     @Transactional
     public BorrowRecordVO renew(Long userId, Long recordId) {
@@ -170,6 +253,17 @@ public class BorrowServiceImpl implements BorrowService {
         return buildVO(record, book, user);
     }
 
+    /**
+     * 查询当前用户的借阅记录。
+     * <p>
+     * 根据用户 ID 查询借阅记录，支持按借阅状态筛选，
+     * 结果按创建时间倒序排列。每条记录附带对应的图书名和用户名信息。
+     * </p>
+     *
+     * @param userId 当前用户 ID
+     * @param req    分页查询参数，支持按状态筛选
+     * @return 借阅记录分页结果
+     */
     @Override
     public PageResult<BorrowRecordVO> myBorrows(Long userId, BorrowPageReq req) {
         LambdaQueryWrapper<BorrowRecord> wrapper = new LambdaQueryWrapper<BorrowRecord>()
@@ -192,6 +286,18 @@ public class BorrowServiceImpl implements BorrowService {
         return new PageResult<>(vos, result.getTotal(), result.getCurrent(), result.getSize());
     }
 
+    /**
+     * 管理员分页查询所有借阅记录。
+     * <p>
+     * 支持按借阅状态、用户 ID 筛选；支持关键词搜索，关键词同时匹配
+     * 用户名和图书名，先分别查询用户表和图书表获取匹配的 ID 列表，
+     * 再组合为 OR 条件进行借阅记录筛选。
+     * 结果按创建时间倒序排列。
+     * </p>
+     *
+     * @param req 管理员借阅分页查询参数
+     * @return 所有借阅记录的分页结果
+     */
     @Override
     public PageResult<BorrowRecordVO> adminPage(AdminBorrowPageReq req) {
         LambdaQueryWrapper<BorrowRecord> wrapper = new LambdaQueryWrapper<>();
@@ -248,6 +354,18 @@ public class BorrowServiceImpl implements BorrowService {
         return new PageResult<>(vos, result.getTotal(), result.getCurrent(), result.getSize());
     }
 
+    /**
+     * 构建借阅记录视图对象。
+     * <p>
+     * 将借阅记录实体与关联的图书、用户信息组装为视图对象。
+     * 图书或用户可能为空（如已被删除），此时对应的名称字段置为 null。
+     * </p>
+     *
+     * @param record 借阅记录实体
+     * @param book   关联的图书实体（可能为 null）
+     * @param user   关联的用户实体（可能为 null）
+     * @return 借阅记录视图对象
+     */
     private BorrowRecordVO buildVO(BorrowRecord record, Book book, User user) {
         BorrowRecordVO vo = new BorrowRecordVO();
         vo.setId(record.getId());

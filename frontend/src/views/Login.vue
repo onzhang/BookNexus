@@ -1,3 +1,12 @@
+<!--
+  ============================================================
+  Login.vue — 登录/注册页面
+  @description 提供用户登录和注册功能，支持登录/注册模式切换。
+               使用 Element Plus 表单验证，登录成功后根据角色自动跳转。
+  @author 张俊文
+  @date 2026-05-01
+  ============================================================
+-->
 <template>
   <div class="login-container">
     <div class="login-card">
@@ -28,6 +37,7 @@
             show-password
           />
         </el-form-item>
+        <!-- 注册模式下的邮箱输入 -->
         <el-form-item v-if="isRegister" prop="email">
           <el-input
             v-model="form.email"
@@ -68,16 +78,21 @@ import { useUserStore } from '@/stores/user'
 const router = useRouter()
 const userStore = useUserStore()
 
+/** 表单引用 */
 const formRef = ref<FormInstance>()
+/** 提交按钮加载状态 */
 const loading = ref(false)
+/** 是否为注册模式 */
 const isRegister = ref(false)
 
+/** 登录/注册表单数据 */
 const form = reactive({
   username: '',
   password: '',
   email: ''
 })
 
+/** 表单校验规则 */
 const rules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [
@@ -90,6 +105,7 @@ const rules: FormRules = {
   ]
 }
 
+/** 切换登录/注册模式 */
 function toggleMode() {
   isRegister.value = !isRegister.value
   formRef.value?.resetFields()
@@ -102,6 +118,10 @@ onMounted(() => {
   }
 })
 
+/**
+ * 提交登录或注册
+ * @description 先校验表单，再调用对应接口，成功后根据角色跳转
+ */
 const handleSubmit = async () => {
   if (!formRef.value) return
   try {

@@ -1,5 +1,15 @@
+<!--
+  ============================================================
+  Borrows.vue — 管理端借阅管理
+  @description 管理员查看和管理所有借阅记录的页面，支持搜索/状态筛选、
+               分页列表和强制归还操作。
+  @author 张俊文
+  @date 2026-05-01
+  ============================================================
+-->
 <template>
   <div class="borrows-page">
+    <!-- 搜索栏 -->
     <el-card shadow="hover">
       <div class="search-bar">
         <el-input
@@ -25,6 +35,7 @@
       </div>
     </el-card>
 
+    <!-- 借阅记录列表 -->
     <el-card shadow="hover" class="table-card">
       <el-table :data="borrowList" stripe border v-loading="loading" style="width: 100%">
         <el-table-column prop="id" label="ID" width="80" />
@@ -68,6 +79,7 @@
 
       <el-empty v-if="!loading && borrowList.length === 0" description="暂无借阅记录" />
 
+      <!-- 分页 -->
       <div class="pagination-wrap" v-if="total > 0">
         <el-pagination
           v-model:current-page="page"
@@ -89,14 +101,22 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '@/api'
 import type { BorrowRecord } from '@/types'
 
+/** 表格加载状态 */
 const loading = ref(false)
+/** 借阅记录列表 */
 const borrowList = ref<BorrowRecord[]>([])
+/** 当前页码 */
 const page = ref(1)
+/** 每页大小 */
 const size = ref(10)
+/** 总记录数 */
 const total = ref(0)
+/** 搜索关键字 */
 const keyword = ref('')
+/** 状态筛选条件 */
 const statusFilter = ref('')
 
+/** 借阅状态 → 中文文本映射 */
 const statusTextMap: Record<string, string> = {
   PENDING: '待确认',
   BORROWED: '借出中',
@@ -105,6 +125,7 @@ const statusTextMap: Record<string, string> = {
   OVERDUE: '逾期'
 }
 
+/** 借阅状态 → Element Plus Tag 类型映射 */
 const statusTagMap: Record<string, string> = {
   PENDING: 'warning',
   BORROWED: '',
@@ -113,14 +134,23 @@ const statusTagMap: Record<string, string> = {
   OVERDUE: 'danger'
 }
 
+/**
+ * 根据状态码返回中文文本
+ * @param status - 状态码
+ */
 function statusText(status: string) {
   return statusTextMap[status] || status
 }
 
+/**
+ * 根据状态码返回标签类型
+ * @param status - 状态码
+ */
 function statusTagType(status: string) {
   return statusTagMap[status] || 'info'
 }
 
+/** 获取借阅记录列表（分页 + 搜索 + 筛选） */
 async function fetchBorrows() {
   loading.value = true
   try {
@@ -139,11 +169,13 @@ async function fetchBorrows() {
   }
 }
 
+/** 搜索（重置到第一页） */
 function handleSearch() {
   page.value = 1
   fetchBorrows()
 }
 
+/** 重置搜索条件 */
 function resetSearch() {
   keyword.value = ''
   statusFilter.value = ''
@@ -151,6 +183,10 @@ function resetSearch() {
   fetchBorrows()
 }
 
+/**
+ * 强制归还（管理员操作，带确认对话框）
+ * @param row - 要强制归还的借阅记录
+ */
 async function handleForceReturn(row: BorrowRecord) {
   try {
     await ElMessageBox.confirm(`确定要强制归还「${row.bookTitle}」的借阅记录吗？`, '确认强制归还', {

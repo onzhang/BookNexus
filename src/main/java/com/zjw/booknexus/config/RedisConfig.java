@@ -28,25 +28,47 @@ import java.time.Duration;
 
 /**
  * Redis 缓存配置
- * <p>覆盖场景：</p>
+ * <p>提供 RedisTemplate 与 Spring Cache 管理器两大核心组件，
+ * 覆盖缓存、分布式锁、计数器等场景。</p>
+ *
+ * <p><b>配置要点：</b></p>
  * <ul>
- *   <li>RedisTemplate — 手动操作 Redis（缓存、分布式锁计数器）</li>
- *   <li>RedisCacheManager — Spring Cache 注解支持（@Cacheable 等）</li>
+ *   <li><b>RedisTemplate</b> — 手动操作 Redis，支持 String/ Hash 结构，
+ *   用于分布式锁（Redisson）、计数器、临时数据存储</li>
+ *   <li><b>RedisCacheManager</b> — Spring Cache 注解支持（@Cacheable / @CachePut / @CacheEvict），
+ *   默认 TTL 10 分钟，禁用缓存 null 值</li>
  * </ul>
- * <p>序列化策略：Key 使用 StringRedisSerializer，Value 使用 Jackson2JsonRedisSerializer
- * （存储类型信息，支持泛型反序列化）。</p>
+ *
+ * <p><b>序列化策略：</b></p>
+ * <ul>
+ *   <li>Key 使用 StringRedisSerializer（UTF-8）</li>
+ *   <li>Value 使用 GenericJackson2JsonRedisSerializer（存储类型信息，支持泛型反序列化）</li>
+ *   <li>注册 JavaTimeModule 以正确序列化/反序列化 LocalDateTime 等 Java 8 时间类型</li>
+ * </ul>
+ *
+ * <p><b>涉及中间件：</b>Redis 7.x（Lettuce 客户端）</p>
+ *
+ * @author 张俊文
+ * @since 2026-04-30
  */
 @Configuration
 @EnableCaching
 public class RedisConfig {
 
     /**
-     * 自定义 RedisTemplate
-     * <p>设置 Key 为字符串序列化，Value 为 JSON 序列化（携带类型信息），
-     * 同时注册 JavaTimeModule 以正确序列化 LocalDateTime。</p>
+     * 创建自定义 RedisTemplate
+     * <p>配置 JSON 序列化策略以支持复杂对象（含泛型与 Java 8 时间类型）的存取：</p>
+     * <ul>
+     *   <li>Key 序列化：StringRedisSerializer.UTF_8，确保可读性</li>
+     *   <li>HashKey 序列化：同 Key 策略</li>
+     *   <li>Value 序列化：GenericJackson2JsonRedisSerializer，携带 {@code @class} 类型信息</li>
+     *   <li>HashValue 序列化：同 Value 策略</li>
+     *   <li>ObjectMapper 注册 JavaTimeModule，支持 LocalDateTime 序列化</li>
+     *   <li>开启 DefaultTyping.NON_FINAL，序列化时携带非 final 类型的类信息以支持反序列化</li>
+     * </ul>
      *
-     * @param factory Redis 连接工厂
-     * @return 配置后的 RedisTemplate
+     * @param factory Redis 连接工厂，由 Lettuce 连接池提供
+     * @return 配置完成的 RedisTemplate，线程安全可注入 Service 层使用
      */
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
@@ -73,11 +95,17 @@ public class RedisConfig {
     }
 
     /**
-     * Spring Cache 缓存管理器
-     * <p>默认 TTL 10 分钟，禁用缓存 null 值。</p>
+     * 创建 Spring Cache 缓存管理器（供 {@code @Cacheable} 等注解使用）
+     * <p>配置默认缓存策略：</p>
+     * <ul>
+     *   <li>TTL：10 分钟（可通过 {@code @CacheConfig(cacheNames = "...")} 按需覆盖）</li>
+     *   <li>Key 序列化：StringRedisSerializer.UTF_8</li>
+     *   <li>Value 序列化：GenericJackson2JsonRedisSerializer（含 JavaTimeModule）</li>
+     *   <li>禁用缓存 null 值，避免缓存穿透</li>
+     * </ul>
      *
-     * @param factory Redis 连接工厂
-     * @return RedisCacheManager
+     * @param factory Redis 连接工厂，由 Lettuce 连接池提供
+     * @return RedisCacheManager 实例，支持声明式缓存注解
      */
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory factory) {

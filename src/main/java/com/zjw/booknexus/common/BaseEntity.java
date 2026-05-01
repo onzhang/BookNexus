@@ -14,7 +14,20 @@ import java.time.LocalDateTime;
 
 /**
  * 实体基类
- * <p>所有数据库实体继承此类，自动包含审计字段，由 MyBatis-Plus 自动填充。</p>
+ * <p>所有数据库实体均继承此类，自动包含公共审计字段。
+ * 审计字段由 {@link com.zjw.booknexus.config.MyMetaObjectHandler MyMetaObjectHandler}
+ * 通过 MyBatis-Plus 自动填充处理器完成自动赋值。</p>
+ *
+ * <p>审计字段说明：</p>
+ * <ul>
+ *   <li>{@code id} — 自增主键，由数据库自增策略生成</li>
+ *   <li>{@code createdAt} — 创建时间，插入时自动填充</li>
+ *   <li>{@code updatedAt} — 更新时间，插入和更新时自动填充</li>
+ *   <li>{@code isDeleted} — 逻辑删除标记，0=正常，1=已删除</li>
+ * </ul>
+ *
+ * @author 张俊文
+ * @since 2026-04-30
  */
 public class BaseEntity implements Serializable {
 

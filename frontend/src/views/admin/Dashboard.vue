@@ -1,5 +1,15 @@
+<!--
+  ============================================================
+  Dashboard.vue — 管理端仪表盘
+  @description 管理员首页，展示系统概览统计卡片（总藏书、总用户、
+               借出中、逾期未还）和最近借阅记录列表。
+  @author 张俊文
+  @date 2026-05-01
+  ============================================================
+-->
 <template>
   <div class="dashboard">
+    <!-- 统计卡片行 -->
     <el-row :gutter="20" class="stats-row">
       <el-col :xs="24" :sm="12" :lg="6">
         <el-card shadow="hover" class="stat-card">
@@ -55,6 +65,7 @@
       </el-col>
     </el-row>
 
+    <!-- 最近借阅记录表格 -->
     <el-card shadow="hover" class="table-card">
       <template #header>
         <span class="card-title">最近借阅记录</span>
@@ -88,9 +99,12 @@ import { Reading, User, Document, WarningFilled } from '@element-plus/icons-vue'
 import api from '@/api'
 import type { BorrowRecord } from '@/types'
 
+/** 表格加载状态 */
 const loading = ref(false)
+/** 最近借阅列表 */
 const borrowList = ref<BorrowRecord[]>([])
 
+/** 统计面板数据 */
 const stats = reactive({
   totalBooks: 0,
   totalUsers: 0,
@@ -98,6 +112,7 @@ const stats = reactive({
   overdueCount: 0
 })
 
+/** 借阅状态 → 中文文本映射 */
 const statusTextMap: Record<string, string> = {
   PENDING: '待确认',
   BORROWED: '借出中',
@@ -106,6 +121,7 @@ const statusTextMap: Record<string, string> = {
   OVERDUE: '逾期'
 }
 
+/** 借阅状态 → Element Plus Tag 类型映射 */
 const statusTagMap: Record<string, string> = {
   PENDING: 'warning',
   BORROWED: '',
@@ -114,14 +130,23 @@ const statusTagMap: Record<string, string> = {
   OVERDUE: 'danger'
 }
 
+/**
+ * 根据状态码返回中文文本
+ * @param status - 状态码
+ */
 function statusText(status: string) {
   return statusTextMap[status] || status
 }
 
+/**
+ * 根据状态码返回标签类型
+ * @param status - 状态码
+ */
 function statusTagType(status: string) {
   return statusTagMap[status] || 'info'
 }
 
+/** 获取四项统计数据（并行请求，单项失败不影响其他） */
 async function fetchStats() {
   try {
     const [bookRes, userRes, borrowRes, overdueRes] = await Promise.allSettled([
@@ -148,6 +173,7 @@ async function fetchStats() {
   }
 }
 
+/** 获取最近 5 条借阅记录 */
 async function fetchRecentBorrows() {
   loading.value = true
   try {

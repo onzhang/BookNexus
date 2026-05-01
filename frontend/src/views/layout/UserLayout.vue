@@ -1,5 +1,15 @@
+<!--
+  ============================================================
+  UserLayout.vue — 用户端布局
+  @description 普通用户端整体布局组件，固定宽度侧边栏导航、
+               顶部操作栏和主内容区 <router-view>。
+  @author 张俊文
+  @date 2026-05-01
+  ============================================================
+-->
 <template>
   <el-container class="user-layout">
+    <!-- 侧边栏：Logo + 导航菜单 -->
     <el-aside width="200px" class="user-aside">
       <div class="logo" @click="router.push('/user/home')">
         <span class="logo-text">BookNexus</span>
@@ -27,6 +37,7 @@
     </el-aside>
 
     <el-container>
+      <!-- 顶部操作栏：标题 + 用户信息 + 退出 -->
       <el-header class="user-header">
         <span class="header-title">BookNexus 图书管理系统</span>
         <div class="header-right">
@@ -35,6 +46,7 @@
         </div>
       </el-header>
 
+      <!-- 主内容区：子路由视图 -->
       <el-main class="user-main">
         <router-view />
       </el-main>
@@ -53,8 +65,13 @@ const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
+/** 当前激活的菜单项路径 */
 const activeMenu = computed(() => route.path)
 
+/**
+ * 退出登录
+ * @description 弹出确认对话框，确认后清除用户状态并跳转登录页
+ */
 async function handleLogout() {
   try {
     await ElMessageBox.confirm('确定要退出登录吗？', '提示', {

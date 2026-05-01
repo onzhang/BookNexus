@@ -1,5 +1,15 @@
+<!--
+  ============================================================
+  AdminLayout.vue — 管理后台布局
+  @description 管理员端整体布局组件，包含可折叠侧边栏导航、顶部操作栏
+               （含用户名展示和退出登录）和主内容区 <router-view>。
+  @author 张俊文
+  @date 2026-05-01
+  ============================================================
+-->
 <template>
   <el-container class="admin-layout">
+    <!-- 侧边栏：Logo + 导航菜单（可折叠） -->
     <el-aside :width="isCollapse ? '64px' : '220px'" class="admin-aside">
       <div class="logo" @click="router.push('/admin/dashboard')">
         <el-icon :size="24" color="#fff"><Reading /></el-icon>
@@ -38,6 +48,7 @@
     </el-aside>
 
     <el-container>
+      <!-- 顶部操作栏：折叠按钮 + 标题 + 用户信息 + 退出 -->
       <el-header class="admin-header">
         <div class="header-left">
           <el-button
@@ -53,6 +64,7 @@
         </div>
       </el-header>
 
+      <!-- 主内容区：子路由视图 -->
       <el-main class="admin-main">
         <router-view />
       </el-main>
@@ -79,10 +91,16 @@ const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
+/** 侧边栏是否折叠 */
 const isCollapse = ref(false)
 
+/** 当前激活的菜单项路径 */
 const activeMenu = computed(() => route.path)
 
+/**
+ * 退出登录
+ * @description 弹出确认对话框，确认后清除用户状态并跳转登录页
+ */
 async function handleLogout() {
   try {
     await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
