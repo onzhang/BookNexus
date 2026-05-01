@@ -303,3 +303,79 @@ M1 审查发现的 18 个问题已全部修复。详细见 `docs/项目计划书
 ## AI 交互约定
 
 - **语言**: 默认使用**中文**回复，除非用户明确要求使用英文
+
+## Git 版本控制规范
+
+### GitHub 仓库初始化
+
+1. **创建仓库**: 在 GitHub 网页上创建新仓库（不要勾选 "Initialize with README"）
+2. **本地关联**: 获取仓库地址后执行以下命令
+   ```bash
+   git remote add origin <仓库地址>
+   git branch -M master
+   git push -u origin master
+   ```
+3. **同步其他分支**: 功能分支同步最新 master
+   ```bash
+   git checkout feature/m3-core-features
+   git merge master
+   git push origin feature/m3-core-features
+   ```
+
+### 分支策略
+
+| 分支 | 用途 | 命名规范 |
+|------|------|----------|
+| master | 生产代码 | master |
+| feature/* | 功能开发 | feature/m3-core-features |
+| hotfix/* | 紧急修复 | hotfix/xxx |
+
+### 基本操作命令
+
+```bash
+# 查看状态
+git status
+
+# 查看提交历史
+git log --oneline -5
+
+# 添加文件（不要用 git add .）
+git add <具体文件路径>
+
+# 提交
+git commit -m "提交信息"
+
+# 推送
+git push
+
+# 拉取并合并
+git pull origin master
+
+# 创建并切换分支
+git checkout -b feature/xxx
+
+# 合并分支（先切换到目标分支）
+git checkout master
+git merge feature/xxx
+```
+
+### 注意事项
+
+1. **不要用 `git add .`** — 容易误提交 node_modules、target 等不需要的文件，先查看 `git status`
+2. **提交信息规范** — 简明扼要，说明本次做了什么
+3. **不要轻易 `git push -f`** — 会覆盖远程历史，造成协作问题
+4. **不要轻易 `git reset --hard`** — 会丢失未提交的更改，操作前确认
+5. **删除文件后要 commit** — `git restore` 可以恢复已删文件，但删除操作本身需要 commit
+6. **合并分支前先 pull** — 确保本地有最新的远程代码
+7. **敏感信息不上传** — .env、credentials.json 等不要 commit，已经上传的要用 git filter-branch 或 BFG 清理
+8. **工作区干净再操作分支** — 切换分支前确保没有未提交的更改，或用 `git stash` 暂存
+
+### 常见问题处理
+
+| 场景 | 解决方案 |
+|------|----------|
+| 误删文件未 commit | `git restore <文件>` 恢复 |
+| 误删文件已 commit | `git checkout HEAD~1 -- <文件>` 从上一个提交恢复 |
+| 提交信息写错 | `git commit --amend` 修改（仅限本地未 push） |
+| 想放弃本地修改 | `git restore .` 丢弃所有修改 |
+| 暂存当前工作 | `git stash` 暂存，`git stash pop` 恢复 |
