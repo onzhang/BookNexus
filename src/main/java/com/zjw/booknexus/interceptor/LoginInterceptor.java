@@ -52,43 +52,54 @@ public class LoginInterceptor implements HandlerInterceptor {
      */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        // 1. 放行 OPTIONS 预检请求，浏览器跨域时需要
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             return true;
         }
 
+        // 2. 从请求头中提取 Authorization: Bearer <token>
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            // 缺少令牌或格式错误，返回 401 未授权
             sendJson(response, 401, "{\"code\":401,\"message\":\"unauthorized\"}");
             return false;
         }
 
+        // 3. 截取 Bearer 后的实际 Token 字符串
         String token = authHeader.substring(7);
 
         try {
+            // 4. 解析 JWT：验证签名和过期时间
             Claims claims = jwtUtils.parseToken(token);
 
+            // 5. 校验令牌类型：仅接受 type=access 的 Access Token，拒绝 Refresh Token 用于 API 认证
             String type = claims.get("type", String.class);
             if (!"access".equals(type)) {
                 sendJson(response, 401, "{\"code\":401,\"message\":\"invalid token type\"}");
                 return false;
             }
 
+            // 6. 提取用户身份信息
             Long userId = claims.get("userId", Long.class);
             String role = claims.get("role", String.class);
 
+            // 7. 管理端权限校验：admin 路径仅限 ADMIN 角色访问
             String path = request.getRequestURI();
             if (path.startsWith("/api/v1/admin/") && !"ADMIN".equals(role)) {
                 sendJson(response, 403, "{\"code\":403,\"message\":\"admin access required\"}");
                 return false;
             }
 
+            // 8. 将用户信息注入到 request attribute 中，供后续业务层通过 UserContext 获取
             request.setAttribute("userId", userId);
             request.setAttribute("role", role);
         } catch (JwtException e) {
+            // 9. 令牌解析失败（签名无效或已过期），返回 401
             sendJson(response, 401, "{\"code\":401,\"message\":\"invalid or expired token\"}");
             return false;
         }
 
+        // 10. 校验通过，放行请求
         return true;
     }
 
@@ -101,6 +112,7 @@ public class LoginInterceptor implements HandlerInterceptor {
      * @throws Exception 写入响应时可能抛出的异常
      */
     private void sendJson(HttpServletResponse response, int status, String body) throws Exception {
+        // 设置 HTTP 状态码和 Content-Type，写入 JSON 格式的错误响应体
         response.setStatus(status);
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write(body);

@@ -63,27 +63,35 @@ public class BookServiceImpl implements BookService {
      */
     @Override
     public PageResult<BookVO> page(BookPageReq req) {
+        // 1. 构建动态查询条件：支持关键词、状态、书架 ID 三种筛选维度
         LambdaQueryWrapper<Book> wrapper = new LambdaQueryWrapper<>();
         if (StrUtil.isNotBlank(req.getKeyword())) {
+            // 关键词同时匹配书名、作者、ISBN 三个字段，任一匹配即命中
             wrapper.and(w -> w.like(Book::getTitle, req.getKeyword())
                     .or().like(Book::getAuthor, req.getKeyword())
                     .or().like(Book::getIsbn, req.getKeyword()));
         }
         if (StrUtil.isNotBlank(req.getStatus())) {
+            // 按图书状态精确筛选（AVAILABLE / BORROWED / DAMAGED / LOST）
             wrapper.eq(Book::getStatus, req.getStatus());
         }
         if (req.getBookshelfId() != null) {
+            // 按书架位置精确筛选
             wrapper.eq(Book::getBookshelfId, req.getBookshelfId());
         }
+        // 2. 按创建时间倒序排，最新上架的图书优先展示
         wrapper.orderByDesc(Book::getCreatedAt);
 
+        // 3. 执行 MyBatis-Plus 分页查询
         Page<Book> mpPage = new Page<>(req.getPage(), req.getSize());
         Page<Book> result = bookMapper.selectPage(mpPage, wrapper);
 
+        // 4. 将实体列表流式转换为视图对象（填充分类名、书架名等关联信息）
         List<BookVO> voList = result.getRecords().stream()
                 .map(this::toBookVO)
                 .toList();
 
+        // 5. 组装分页结果返回
         return new PageResult<>(voList, result.getTotal(), result.getCurrent(), result.getSize());
     }
 
@@ -100,10 +108,12 @@ public class BookServiceImpl implements BookService {
      */
     @Override
     public BookVO getById(Long id) {
+        // 1. 根据主键查询图书，不存在则抛出 404 异常
         Book book = bookMapper.selectById(id);
         if (book == null) {
             throw new BusinessException(404, ErrorCode.BOOK_NOT_FOUND);
         }
+        // 2. 转换为视图对象，附带分类和书架等关联信息
         return toBookVO(book);
     }
 
@@ -123,18 +133,24 @@ public class BookServiceImpl implements BookService {
     @Override
     @Transactional
     public BookVO create(BookCreateReq req) {
+        // 1. 校验 ISBN 唯一性：防止录入已存在的重复图书
         checkDuplicateIsbn(req.getIsbn(), null);
 
+        // 2. 创建图书实体：使用 Hutool BeanUtil 批量拷贝同名属性
         Book book = new Book();
         BeanUtil.copyProperties(req, book);
+        // 3. 设置默认值：新书上架状态为可借阅，默认库存各为 1
         book.setPublishDate(req.getPublishedDate());
         book.setStatus("AVAILABLE");
         book.setStock(1);
         book.setAvailableStock(1);
 
+        // 4. 持久化图书记录
         bookMapper.insert(book);
+        // 5. 建立图书与分类的关联关系（批量插入 book_category_rel 表）
         saveCategoryRelations(book.getId(), req.getCategoryIds());
 
+        // 6. 返回创建后的图书视图（含 ID 及关联信息）
         return toBookVO(book);
     }
 
@@ -156,12 +172,15 @@ public class BookServiceImpl implements BookService {
     @Override
     @Transactional
     public BookVO update(Long id, BookUpdateReq req) {
+        // 1. 查询待更新图书是否存在
         Book book = bookMapper.selectById(id);
         if (book == null) {
             throw new BusinessException(404, ErrorCode.BOOK_NOT_FOUND);
         }
 
+        // 2. 对非空字段逐一进行部分更新（仅更新请求中携带的字段）
         if (StrUtil.isNotBlank(req.getIsbn()) && !req.getIsbn().equals(book.getIsbn())) {
+            // ISBN 变更时需校验新 ISBN 的唯一性（排除当前图书自身）
             checkDuplicateIsbn(req.getIsbn(), id);
             book.setIsbn(req.getIsbn());
         }
@@ -187,8 +206,10 @@ public class BookServiceImpl implements BookService {
             book.setBookshelfId(req.getBookshelfId());
         }
 
+        // 3. 持久化更新
         bookMapper.updateById(book);
 
+        // 4. 若提供了分类 ID 列表，先清空原有关联再重新建立（替换式更新）
         if (req.getCategoryIds() != null) {
             LambdaQueryWrapper<BookCategoryRel> relWrapper = new LambdaQueryWrapper<>();
             relWrapper.eq(BookCategoryRel::getBookId, id);
@@ -196,6 +217,7 @@ public class BookServiceImpl implements BookService {
             saveCategoryRelations(id, req.getCategoryIds());
         }
 
+        // 5. 重新查询最新数据并返回（确保关联信息已同步更新）
         return toBookVO(bookMapper.selectById(id));
     }
 
@@ -212,10 +234,12 @@ public class BookServiceImpl implements BookService {
     @Override
     @Transactional
     public void delete(Long id) {
+        // 1. 校验图书是否存在，不存在则直接抛出 404
         Book book = bookMapper.selectById(id);
         if (book == null) {
             throw new BusinessException(404, ErrorCode.BOOK_NOT_FOUND);
         }
+        // 2. 执行物理删除（不可恢复，操作前需确认）
         bookMapper.deleteById(id);
     }
 
@@ -231,11 +255,13 @@ public class BookServiceImpl implements BookService {
      * @throws BusinessException 当 ISBN 已存在时抛出 409 异常
      */
     private void checkDuplicateIsbn(String isbn, Long excludeId) {
+        // 构造查询条件：按 ISBN 精确匹配，更新场景下排除当前图书自身
         LambdaQueryWrapper<Book> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Book::getIsbn, isbn);
         if (excludeId != null) {
             wrapper.ne(Book::getId, excludeId);
         }
+        // 若存在匹配记录，说明 ISBN 已被占用
         if (bookMapper.selectOne(wrapper) != null) {
             throw new BusinessException(409, ErrorCode.DUPLICATE_ISBN);
         }
@@ -252,9 +278,11 @@ public class BookServiceImpl implements BookService {
      * @param categoryIds 分类 ID 列表
      */
     private void saveCategoryRelations(Long bookId, List<Long> categoryIds) {
+        // 分类列表为空时无需建立关联关系
         if (CollectionUtil.isEmpty(categoryIds)) {
             return;
         }
+        // 遍历分类 ID，逐条插入图书-分类关联记录
         for (Long categoryId : categoryIds) {
             BookCategoryRel rel = new BookCategoryRel();
             rel.setBookId(bookId);
@@ -274,21 +302,26 @@ public class BookServiceImpl implements BookService {
      * @return 图书视图对象，包含完整的关联信息
      */
     private BookVO toBookVO(Book book) {
+        // 1. 拷贝同名基础属性（书名、作者、ISBN 等）
         BookVO vo = new BookVO();
         BeanUtil.copyProperties(book, vo);
         vo.setPublishDate(book.getPublishDate());
 
+        // 2. 查询图书关联的分类信息：通过中间表 book_category_rel 获取分类 ID 列表
         LambdaQueryWrapper<BookCategoryRel> relWrapper = new LambdaQueryWrapper<>();
         relWrapper.eq(BookCategoryRel::getBookId, book.getId());
         List<BookCategoryRel> rels = bookCategoryRelMapper.selectList(relWrapper);
         if (CollectionUtil.isNotEmpty(rels)) {
+            // 有关联分类：查询分类名称列表并设置到 VO
             List<Long> categoryIds = rels.stream().map(BookCategoryRel::getCategoryId).toList();
             List<Category> categories = categoryMapper.selectBatchIds(categoryIds);
             vo.setCategoryNames(categories.stream().map(Category::getName).toList());
         } else {
+            // 无关联分类：设置为空列表
             vo.setCategoryNames(List.of());
         }
 
+        // 3. 查询书架名称：若有关联书架则查询其名称并设置到 VO
         if (book.getBookshelfId() != null) {
             Bookshelf bookshelf = bookshelfMapper.selectById(book.getBookshelfId());
             if (bookshelf != null) {

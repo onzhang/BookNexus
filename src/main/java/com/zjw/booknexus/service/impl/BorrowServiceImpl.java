@@ -77,14 +77,17 @@ public class BorrowServiceImpl implements BorrowService {
     @Override
     @Transactional
     public BorrowRecordVO borrow(Long userId, BorrowReq req) {
+        // 1. 校验图书是否存在，不存在则直接拒绝借阅
         Book book = bookMapper.selectById(req.getBookId());
         if (book == null) {
             throw new BusinessException(404, ErrorCode.BOOK_NOT_FOUND);
         }
+        // 2. 校验图书状态是否可借（仅 AVAILABLE 状态的图书允许借出）
         if (!BookStatus.AVAILABLE.name().equals(book.getStatus())) {
             throw new BusinessException(409, ErrorCode.BOOK_NOT_AVAILABLE);
         }
 
+        // 3. 校验用户当前借阅数是否已达上限（最多同时借阅 5 本，含已续借的记录）
         long activeCount = borrowRecordMapper.selectCount(new LambdaQueryWrapper<BorrowRecord>()
                 .eq(BorrowRecord::getUserId, userId)
                 .in(BorrowRecord::getStatus, BorrowStatus.BORROWED.name(), BorrowStatus.RENEWED.name()));
@@ -92,6 +95,7 @@ public class BorrowServiceImpl implements BorrowService {
             throw new BusinessException(409, ErrorCode.BORROW_LIMIT_EXCEEDED);
         }
 
+        // 4. 校验用户是否已借阅该书且尚未归还（防止对同一本书重复借阅）
         long existingBorrow = borrowRecordMapper.selectCount(new LambdaQueryWrapper<BorrowRecord>()
                 .eq(BorrowRecord::getUserId, userId)
                 .eq(BorrowRecord::getBookId, req.getBookId())
@@ -100,6 +104,7 @@ public class BorrowServiceImpl implements BorrowService {
             throw new BusinessException(409, ErrorCode.ALREADY_BORROWED);
         }
 
+        // 5. 创建借阅记录：借阅日期为当天，应还日期为 30 天后，初始罚金为 0
         LocalDate today = LocalDate.now();
         BorrowRecord record = new BorrowRecord();
         record.setUserId(userId);
@@ -111,9 +116,11 @@ public class BorrowServiceImpl implements BorrowService {
         record.setFineAmount(BigDecimal.ZERO);
         borrowRecordMapper.insert(record);
 
+        // 6. 同步更新图书状态为 BORROWED（标记该书已被借出）
         book.setStatus(BookStatus.BORROWED.name());
         bookMapper.updateById(book);
 
+        // 7. 查询用户信息并组装视图对象返回
         User user = userMapper.selectById(userId);
         return buildVO(record, book, user);
     }
@@ -136,12 +143,14 @@ public class BorrowServiceImpl implements BorrowService {
     @Override
     @Transactional
     public BorrowRecordVO returnBook(Long userId, Long recordId) {
+        // 1. 查询借阅记录：同时按记录 ID 和用户 ID 查询，确保只有记录归属人本人可以归还
         BorrowRecord record = borrowRecordMapper.selectOne(new LambdaQueryWrapper<BorrowRecord>()
                 .eq(BorrowRecord::getId, recordId)
                 .eq(BorrowRecord::getUserId, userId));
         if (record == null) {
             throw new BusinessException(404, ErrorCode.RECORD_NOT_FOUND);
         }
+        // 2. 调用核心归还逻辑（状态校验、罚金计算、图书状态更新）
         return doReturn(record);
     }
 
@@ -161,10 +170,12 @@ public class BorrowServiceImpl implements BorrowService {
     @Override
     @Transactional
     public BorrowRecordVO adminReturnRecord(Long recordId) {
+        // 1. 管理员直接按记录 ID 查询（不校验用户身份），适用于线下还书等场景
         BorrowRecord record = borrowRecordMapper.selectById(recordId);
         if (record == null) {
             throw new BusinessException(404, ErrorCode.RECORD_NOT_FOUND);
         }
+        // 2. 调用核心归还逻辑
         return doReturn(record);
     }
 
@@ -182,15 +193,18 @@ public class BorrowServiceImpl implements BorrowService {
      * @throws BusinessException 当记录状态不合法时抛出 409 异常
      */
     private BorrowRecordVO doReturn(BorrowRecord record) {
+        // 1. 校验借阅记录状态：仅 BORROWED（借阅中）或 RENEWED（已续借）允许归还
         String status = record.getStatus();
         if (!BorrowStatus.BORROWED.name().equals(status) && !BorrowStatus.RENEWED.name().equals(status)) {
             throw new BusinessException(409, ErrorCode.INVALID_STATUS);
         }
 
+        // 2. 记录实际归还日期，更新记录状态为 RETURNED
         LocalDate today = LocalDate.now();
         record.setReturnDate(today);
         record.setStatus(BorrowStatus.RETURNED.name());
 
+        // 3. 计算逾期罚金：若实际归还日期晚于应还日期，按 0.10 元/天计算
         if (today.isAfter(record.getDueDate())) {
             long overdueDays = ChronoUnit.DAYS.between(record.getDueDate(), today);
             BigDecimal fine = FINE_PER_DAY.multiply(BigDecimal.valueOf(overdueDays))
@@ -198,14 +212,17 @@ public class BorrowServiceImpl implements BorrowService {
             record.setFineAmount(fine);
         }
 
+        // 4. 持久化更新借阅记录
         borrowRecordMapper.updateById(record);
 
+        // 5. 将图书状态恢复为 AVAILABLE，释放图书供其他用户借阅
         Book book = bookMapper.selectById(record.getBookId());
         if (book != null) {
             book.setStatus(BookStatus.AVAILABLE.name());
             bookMapper.updateById(book);
         }
 
+        // 6. 查询用户信息并组装视图对象返回
         User user = userMapper.selectById(record.getUserId());
         return buildVO(record, book, user);
     }
@@ -227,6 +244,7 @@ public class BorrowServiceImpl implements BorrowService {
     @Override
     @Transactional
     public BorrowRecordVO renew(Long userId, Long recordId) {
+        // 1. 校验借阅记录归属：记录必须属于当前用户
         BorrowRecord record = borrowRecordMapper.selectOne(new LambdaQueryWrapper<BorrowRecord>()
                 .eq(BorrowRecord::getId, recordId)
                 .eq(BorrowRecord::getUserId, userId));
@@ -234,20 +252,25 @@ public class BorrowServiceImpl implements BorrowService {
             throw new BusinessException(404, ErrorCode.RECORD_NOT_FOUND);
         }
 
+        // 2. 校验记录状态：仅 BORROWED（借阅中）或 RENEWED（已续借但仍可再次续借？不，上限为 1 次）允许续借
+        // 注意：实际业务中只有 BORROWED 状态的记录可进行首次续借
         String status = record.getStatus();
         if (!BorrowStatus.BORROWED.name().equals(status) && !BorrowStatus.RENEWED.name().equals(status)) {
             throw new BusinessException(409, ErrorCode.INVALID_STATUS);
         }
 
+        // 3. 校验续借次数：每本书最多续借 1 次，已达上限则拒绝
         if (record.getRenewCount() != null && record.getRenewCount() >= MAX_RENEW_COUNT) {
             throw new BusinessException(409, ErrorCode.RENEW_LIMIT_EXCEEDED);
         }
 
+        // 4. 执行续借：应还日期延长 15 天，续借次数加 1，状态更新为 RENEWED
         record.setDueDate(record.getDueDate().plusDays(RENEW_DAYS));
         record.setRenewCount(record.getRenewCount() == null ? 1 : record.getRenewCount() + 1);
         record.setStatus(BorrowStatus.RENEWED.name());
         borrowRecordMapper.updateById(record);
 
+        // 5. 查询关联信息并组装视图对象返回
         Book book = bookMapper.selectById(record.getBookId());
         User user = userMapper.selectById(record.getUserId());
         return buildVO(record, book, user);
@@ -266,16 +289,20 @@ public class BorrowServiceImpl implements BorrowService {
      */
     @Override
     public PageResult<BorrowRecordVO> myBorrows(Long userId, BorrowPageReq req) {
+        // 1. 构建查询条件：按当前用户 ID 精确过滤，可选按借阅状态进一步筛选
         LambdaQueryWrapper<BorrowRecord> wrapper = new LambdaQueryWrapper<BorrowRecord>()
                 .eq(BorrowRecord::getUserId, userId);
         if (req.getStatus() != null && !req.getStatus().isEmpty()) {
             wrapper.eq(BorrowRecord::getStatus, req.getStatus());
         }
+        // 2. 按创建时间倒序排列，最新记录优先展示
         wrapper.orderByDesc(BorrowRecord::getCreatedAt);
 
+        // 3. 执行分页查询
         Page<BorrowRecord> page = new Page<>(req.getPage(), req.getSize());
         IPage<BorrowRecord> result = borrowRecordMapper.selectPage(page, wrapper);
 
+        // 4. 流式转换为 VO：每条记录需查询对应的图书名和用户名
         List<BorrowRecordVO> vos = result.getRecords().stream()
                 .map(record -> {
                     Book book = bookMapper.selectById(record.getBookId());
@@ -283,6 +310,7 @@ public class BorrowServiceImpl implements BorrowService {
                     return buildVO(record, book, user);
                 }).toList();
 
+        // 5. 组装分页结果返回
         return new PageResult<>(vos, result.getTotal(), result.getCurrent(), result.getSize());
     }
 
@@ -300,6 +328,7 @@ public class BorrowServiceImpl implements BorrowService {
      */
     @Override
     public PageResult<BorrowRecordVO> adminPage(AdminBorrowPageReq req) {
+        // 1. 构建基础过滤条件：按借阅状态和用户 ID 精确筛选
         LambdaQueryWrapper<BorrowRecord> wrapper = new LambdaQueryWrapper<>();
 
         if (req.getStatus() != null && !req.getStatus().isEmpty()) {
@@ -309,8 +338,10 @@ public class BorrowServiceImpl implements BorrowService {
             wrapper.eq(BorrowRecord::getUserId, req.getUserId());
         }
 
+        // 2. 关键词搜索：关键词同时匹配用户名和图书名
         String keyword = req.getKeyword();
         if (keyword != null && !keyword.isEmpty()) {
+            // 先分别查询用户表和图书表，获取匹配的 ID 列表
             List<Long> userIds = userMapper.selectList(new LambdaQueryWrapper<User>()
                             .like(User::getUsername, keyword)
                             .select(User::getId))
@@ -320,10 +351,12 @@ public class BorrowServiceImpl implements BorrowService {
                             .select(Book::getId))
                     .stream().map(Book::getId).toList();
 
+            // 若关键词没有匹配到任何用户或图书，直接返回空分页
             if (userIds.isEmpty() && bookIds.isEmpty()) {
                 return new PageResult<>(Collections.emptyList(), 0L, (long) req.getPage(), (long) req.getSize());
             }
 
+            // 组合 OR 条件：用户 ID 匹配 OR 图书 ID 匹配
             final List<Long> finalUserIds = userIds;
             final List<Long> finalBookIds = bookIds;
             wrapper.and(w -> {
@@ -339,11 +372,14 @@ public class BorrowServiceImpl implements BorrowService {
             });
         }
 
+        // 3. 按创建时间倒序排列
         wrapper.orderByDesc(BorrowRecord::getCreatedAt);
 
+        // 4. 执行分页查询
         Page<BorrowRecord> page = new Page<>(req.getPage(), req.getSize());
         IPage<BorrowRecord> result = borrowRecordMapper.selectPage(page, wrapper);
 
+        // 5. 流式转换为 VO（附带图书名和用户名）
         List<BorrowRecordVO> vos = result.getRecords().stream()
                 .map(record -> {
                     Book book = bookMapper.selectById(record.getBookId());
@@ -351,6 +387,7 @@ public class BorrowServiceImpl implements BorrowService {
                     return buildVO(record, book, user);
                 }).toList();
 
+        // 6. 组装分页结果返回
         return new PageResult<>(vos, result.getTotal(), result.getCurrent(), result.getSize());
     }
 
@@ -367,12 +404,13 @@ public class BorrowServiceImpl implements BorrowService {
      * @return 借阅记录视图对象
      */
     private BorrowRecordVO buildVO(BorrowRecord record, Book book, User user) {
+        // 将借阅记录与关联的图书、用户信息组装为视图对象
         BorrowRecordVO vo = new BorrowRecordVO();
         vo.setId(record.getId());
         vo.setUserId(record.getUserId());
-        vo.setUsername(user != null ? user.getUsername() : null);
+        vo.setUsername(user != null ? user.getUsername() : null);   // 用户可能已被删除，此时用户名为 null
         vo.setBookId(record.getBookId());
-        vo.setBookTitle(book != null ? book.getTitle() : null);
+        vo.setBookTitle(book != null ? book.getTitle() : null);     // 图书可能已被删除，此时书名为 null
         vo.setBorrowDate(record.getBorrowDate());
         vo.setDueDate(record.getDueDate());
         vo.setReturnDate(record.getReturnDate());

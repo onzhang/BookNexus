@@ -56,14 +56,17 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public LoginResp register(RegisterReq req) {
+        // 1. 校验用户名唯一性：若已存在则拒绝注册，防止重复用户名
         if (userMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getUsername, req.getUsername())) > 0) {
             throw new BusinessException(409, ErrorCode.USERNAME_EXISTS);
         }
+        // 2. 校验邮箱唯一性：邮箱为选填项，若填写则需保证全局唯一
         if (req.getEmail() != null && !req.getEmail().isEmpty()
                 && userMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getEmail, req.getEmail())) > 0) {
             throw new BusinessException(409, ErrorCode.EMAIL_EXISTS);
         }
 
+        // 3. 创建新用户：密码经 BCrypt 加密后存储，默认角色为普通用户，账户默认启用
         User user = new User();
         user.setUsername(req.getUsername());
         user.setPassword(passwordEncoder.encode(req.getPassword()));
@@ -72,6 +75,7 @@ public class AuthServiceImpl implements AuthService {
         user.setStatus("ENABLED");
         userMapper.insert(user);
 
+        // 4. 注册成功后自动生成令牌对并返回登录响应
         return buildLoginResp(user);
     }
 
@@ -90,17 +94,21 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public LoginResp login(LoginReq req) {
+        // 1. 根据用户名查询用户是否存在；不存在则返回 401 避免泄露用户是否注册
         User user = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getUsername, req.getUsername()));
         if (user == null) {
             throw new BusinessException(401, ErrorCode.INVALID_CREDENTIALS);
         }
+        // 2. 检查账户状态：已被禁用的账户拒绝登录
         if ("DISABLED".equals(user.getStatus())) {
             throw new BusinessException(403, ErrorCode.ACCOUNT_DISABLED);
         }
+        // 3. 校验密码：使用 BCrypt 比较明文和密文是否匹配
         if (!passwordEncoder.matches(req.getPassword(), user.getPassword())) {
             throw new BusinessException(401, ErrorCode.INVALID_CREDENTIALS);
         }
 
+        // 4. 校验通过，生成令牌对并返回登录响应
         return buildLoginResp(user);
     }
 
@@ -118,6 +126,7 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public LoginResp refresh(RefreshReq req) {
+        // 1. 解析 Refresh Token：签名或过期解析失败则判定令牌无效
         Claims claims;
         try {
             claims = jwtUtils.parseToken(req.getRefreshToken());
@@ -125,18 +134,22 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(401, ErrorCode.TOKEN_INVALID);
         }
 
+        // 2. 校验令牌类型：仅接受 type=refresh 的令牌，防止用 Access Token 冒充
         if (!"refresh".equals(claims.get("type", String.class))) {
             throw new BusinessException(401, ErrorCode.TOKEN_INVALID);
         }
 
+        // 3. 从令牌中提取用户身份信息
         Long userId = claims.get("userId", Long.class);
         String role = claims.get("role", String.class);
 
+        // 4. 查询用户当前状态：用户已被删除或禁用时拒绝颁发新令牌
         User user = userMapper.selectById(userId);
         if (user == null || "DISABLED".equals(user.getStatus())) {
             throw new BusinessException(401, ErrorCode.TOKEN_INVALID);
         }
 
+        // 5. 校验通过，生成新的令牌对（旧 Refresh Token 将因 Redis 覆盖而失效）
         return buildLoginResp(user);
     }
 
@@ -152,10 +165,12 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public UserVO getCurrentUser(Long userId) {
+        // 1. 根据用户 ID 查询用户信息
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw new BusinessException(404, ErrorCode.USER_NOT_FOUND);
         }
+        // 2. 转换为不含敏感字段的视图对象返回
         return toVO(user);
     }
 
@@ -171,11 +186,14 @@ public class AuthServiceImpl implements AuthService {
      * @return 包含令牌和用户基本信息的登录响应
      */
     private LoginResp buildLoginResp(User user) {
+        // 1. 生成 Access Token（30分钟有效期）和 Refresh Token（7天有效期）
         String accessToken = jwtUtils.generateAccessToken(user.getId(), user.getRole());
         String refreshToken = jwtUtils.generateRefreshToken(user.getId(), user.getRole());
 
+        // 2. 将 Refresh Token 持久化至 Redis：键格式 "refresh:{userId}"，用于服务端吊销校验
         redisTemplate.opsForValue().set("refresh:" + user.getId(), refreshToken, 7, TimeUnit.DAYS);
 
+        // 3. 组装登录响应，返回令牌对和用户基本信息
         return new LoginResp(accessToken, refreshToken, user.getId(), user.getUsername(), user.getRole());
     }
 
@@ -190,6 +208,7 @@ public class AuthServiceImpl implements AuthService {
      * @return 用户视图对象
      */
     private UserVO toVO(User user) {
+        // 将用户实体转换为视图对象：排除密码等敏感字段，仅暴露安全信息
         UserVO vo = new UserVO();
         vo.setId(user.getId());
         vo.setUsername(user.getUsername());

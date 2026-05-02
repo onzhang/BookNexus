@@ -51,6 +51,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public PageResult<UserVO> page(UserPageReq req) {
+        // 1. 构建动态查询条件：关键词同时匹配用户名和邮箱
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(req.getKeyword())) {
             wrapper.and(w -> w
@@ -58,15 +59,19 @@ public class UserServiceImpl implements UserService {
                     .or()
                     .like(User::getEmail, req.getKeyword()));
         }
+        // 2. 按创建时间倒序排列，新注册用户优先展示
         wrapper.orderByDesc(User::getCreatedAt);
 
+        // 3. 执行分页查询
         IPage<User> page = userMapper.selectPage(
                 new Page<>(req.getPage(), req.getSize()), wrapper);
 
+        // 4. 将实体列表转换为不包含敏感字段（密码）的视图对象
         List<UserVO> records = page.getRecords().stream()
                 .map(this::toVO)
                 .toList();
 
+        // 5. 组装分页结果返回
         return new PageResult<>(records, page.getTotal(), page.getCurrent(), page.getSize());
     }
 
@@ -82,10 +87,12 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public UserVO getById(Long id) {
+        // 1. 根据主键查询用户
         User user = userMapper.selectById(id);
         if (user == null) {
             throw new BusinessException(404, ErrorCode.USER_NOT_FOUND);
         }
+        // 2. 转换为不含密码的视图对象返回
         return toVO(user);
     }
 
@@ -105,17 +112,20 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void update(Long id, UserUpdateReq req) {
+        // 1. 查询待更新用户是否存在
         User user = userMapper.selectById(id);
         if (user == null) {
             throw new BusinessException(404, ErrorCode.USER_NOT_FOUND);
         }
 
+        // 2. 对非空字段逐一进行部分更新
         if (req.getEmail() != null) {
             user.setEmail(req.getEmail());
         }
         if (req.getPhone() != null) {
             user.setPhone(req.getPhone());
         }
+        // 3. 状态更新保护：禁止管理员禁用自身账户，防止误操作导致无法登录后台
         if (req.getStatus() != null) {
             if (id.equals(UserContext.getUserId())
                     && "DISABLED".equals(req.getStatus())) {
@@ -124,6 +134,7 @@ public class UserServiceImpl implements UserService {
             user.setStatus(req.getStatus());
         }
 
+        // 4. 持久化更新
         userMapper.updateById(user);
     }
 
@@ -143,14 +154,17 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void updateStatus(Long id, String status) {
+        // 1. 查询用户是否存在
         User user = userMapper.selectById(id);
         if (user == null) {
             throw new BusinessException(404, ErrorCode.USER_NOT_FOUND);
         }
+        // 2. 自身保护：禁止管理员禁用自己，防止管理后台账户被锁导致无法登录
         if (id.equals(UserContext.getUserId()) && "DISABLED".equals(status)) {
             throw new BusinessException(403, ErrorCode.FORBIDDEN);
         }
 
+        // 3. 更新用户状态并持久化
         user.setStatus(status);
         userMapper.updateById(user);
     }
@@ -166,6 +180,7 @@ public class UserServiceImpl implements UserService {
      * @return 用户视图对象
      */
     private UserVO toVO(User user) {
+        // 将用户实体转换为视图对象：仅拷贝非敏感字段，排除密码
         UserVO vo = new UserVO();
         vo.setId(user.getId());
         vo.setUsername(user.getUsername());
@@ -174,6 +189,7 @@ public class UserServiceImpl implements UserService {
         vo.setRole(user.getRole());
         vo.setStatus(user.getStatus());
         vo.setAvatarUrl(user.getAvatarUrl());
+        // LocalDateTime 转为字符串格式展示（如 "2026-04-30T10:30:00"）
         vo.setCreatedAt(user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
         return vo;
     }
