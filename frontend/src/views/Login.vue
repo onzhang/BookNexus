@@ -97,10 +97,9 @@ const rules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 3, message: '密码长度不少于3位', trigger: 'blur' }
+    { min: 6, message: '密码长度不少于6位', trigger: 'blur' }
   ],
   email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
   ]
 }
@@ -132,11 +131,14 @@ const handleSubmit = async () => {
   loading.value = true
   try {
     if (isRegister.value) {
-      await userStore.register({
+      const registerData: Record<string, string> = {
         username: form.username,
-        password: form.password,
-        email: form.email
-      })
+        password: form.password
+      }
+      if (form.email) {
+        registerData.email = form.email
+      }
+      await userStore.register(registerData as any)
       ElMessage.success('注册成功')
     } else {
       await userStore.login({

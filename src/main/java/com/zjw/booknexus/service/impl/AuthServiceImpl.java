@@ -60,9 +60,10 @@ public class AuthServiceImpl implements AuthService {
         if (userMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getUsername, req.getUsername())) > 0) {
             throw new BusinessException(409, ErrorCode.USERNAME_EXISTS);
         }
-        // 2. 校验邮箱唯一性：邮箱为选填项，若填写则需保证全局唯一
-        if (req.getEmail() != null && !req.getEmail().isEmpty()
-                && userMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getEmail, req.getEmail())) > 0) {
+        // 2. 校验邮箱唯一性：邮箱为选填项，空字符串视为未填写
+        String email = (req.getEmail() != null && !req.getEmail().isBlank()) ? req.getEmail() : null;
+        if (email != null
+                && userMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getEmail, email)) > 0) {
             throw new BusinessException(409, ErrorCode.EMAIL_EXISTS);
         }
 
@@ -70,7 +71,7 @@ public class AuthServiceImpl implements AuthService {
         User user = new User();
         user.setUsername(req.getUsername());
         user.setPassword(passwordEncoder.encode(req.getPassword()));
-        user.setEmail(req.getEmail());
+        user.setEmail(email);
         user.setRole("USER");
         user.setStatus("ENABLED");
         userMapper.insert(user);
@@ -143,13 +144,19 @@ public class AuthServiceImpl implements AuthService {
         Long userId = claims.get("userId", Long.class);
         String role = claims.get("role", String.class);
 
-        // 4. 查询用户当前状态：用户已被删除或禁用时拒绝颁发新令牌
+        // 4. 校验刷新令牌是否仍存在于 Redis（防止已吊销的令牌被重放）
+        String storedRefreshToken = redisTemplate.opsForValue().get("refresh:" + userId);
+        if (storedRefreshToken == null || !storedRefreshToken.equals(req.getRefreshToken())) {
+            throw new BusinessException(401, ErrorCode.TOKEN_INVALID);
+        }
+
+        // 5. 查询用户当前状态：用户已被删除或禁用时拒绝颁发新令牌
         User user = userMapper.selectById(userId);
         if (user == null || "DISABLED".equals(user.getStatus())) {
             throw new BusinessException(401, ErrorCode.TOKEN_INVALID);
         }
 
-        // 5. 校验通过，生成新的令牌对（旧 Refresh Token 将因 Redis 覆盖而失效）
+        // 6. 校验通过，生成新的令牌对（旧 Refresh Token 将因 Redis 覆盖而失效）
         return buildLoginResp(user);
     }
 

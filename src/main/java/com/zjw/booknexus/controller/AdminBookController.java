@@ -69,8 +69,8 @@ public class AdminBookController {
      * 删除图书接口。
      * <p>
      * DELETE /api/v1/admin/books/{id}
-     * 管理员删除指定图书。若图书不存在则返回 404 错误。
-     * 删除操作为物理删除，不可恢复，操作前请确认。
+     * 管理员删除指定图书。逻辑删除，记录仍保留在数据库中。
+     * 若图书不存在则返回 404 错误。
      * </p>
      *
      * @param id 要删除的图书 ID

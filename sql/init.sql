@@ -237,10 +237,9 @@ CREATE TABLE `message` (
 
 -- 默认管理员账号
 -- 账号: admin    密码: a123456
--- BCrypt 密文需在 M3 认证模块开发时通过 BCryptPasswordEncoder 生成后替换下方占位值
--- 生成方式: new BCryptPasswordEncoder().encode("a123456")
+-- BCrypt 密文通过 BCryptPasswordEncoder.encode("a123456") 生成
 INSERT INTO `user` (`username`, `password`, `email`, `phone`, `role`, `status`) VALUES
-('admin', '$2a$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', 'admin@booknexus.com', NULL, 'ADMIN', 'ENABLED');
+('admin', '$2b$10$zVbt8GcpDMc4T345twzJz.a5oHkrSBdj7UPaKOvwwtDMIfuc080ZK', 'admin@booknexus.com', NULL, 'ADMIN', 'ENABLED');
 
 -- 默认图书类别种子数据（10 个根类别）
 INSERT INTO `category` (`name`, `parent_id`, `sort_order`) VALUES

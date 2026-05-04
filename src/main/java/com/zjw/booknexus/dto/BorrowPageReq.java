@@ -18,9 +18,12 @@ public class BorrowPageReq {
     /** 当前页码，默认第 1 页 */
     private Integer page = 1;
 
-    /** 每页记录数，默认 10 条 */
+    /** 每页记录数，默认 10 条，最大 100 */
     private Integer size = 10;
 
     /** 借阅状态筛选（PENDING / BORROWED / RETURNED / OVERDUE） */
     private String status;
+
+    public Integer getPage() { return page != null && page > 0 ? page : 1; }
+    public Integer getSize() { return size != null && size > 0 ? Math.min(size, 100) : 10; }
 }

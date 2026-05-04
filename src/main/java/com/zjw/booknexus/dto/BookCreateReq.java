@@ -1,5 +1,6 @@
 package com.zjw.booknexus.dto;
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
@@ -29,11 +30,11 @@ public class BookCreateReq {
 
     /** 作者（必填） */
     @NotBlank(message = "作者不能为空")
-    private String author;
+    private String publisher;
 
     /** 出版社（必填） */
     @NotBlank(message = "出版社不能为空")
-    private String publisher;
+    private String author;
 
     /** 书籍简介 */
     private String description;
@@ -43,6 +44,10 @@ public class BookCreateReq {
 
     /** 出版日期 */
     private LocalDate publishedDate;
+
+    /** 总库存量（默认1） */
+    @Min(value = 1, message = "库存不能小于1")
+    private Integer stock = 1;
 
     /** 所属书架 ID */
     private Long bookshelfId;

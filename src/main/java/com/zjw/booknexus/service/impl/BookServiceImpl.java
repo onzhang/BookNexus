@@ -139,11 +139,11 @@ public class BookServiceImpl implements BookService {
         // 2. 创建图书实体：使用 Hutool BeanUtil 批量拷贝同名属性
         Book book = new Book();
         BeanUtil.copyProperties(req, book);
-        // 3. 设置默认值：新书上架状态为可借阅，默认库存各为 1
+        // 3. 设置默认值：新书上架状态为可借阅，库存从请求中获取
         book.setPublishDate(req.getPublishedDate());
         book.setStatus("AVAILABLE");
-        book.setStock(1);
-        book.setAvailableStock(1);
+        book.setStock(req.getStock() != null ? req.getStock() : 1);
+        book.setAvailableStock(req.getStock() != null ? req.getStock() : 1);
 
         // 4. 持久化图书记录
         bookMapper.insert(book);
@@ -224,8 +224,8 @@ public class BookServiceImpl implements BookService {
     /**
      * 删除图书。
      * <p>
-     * 物理删除指定 ID 的图书记录，操作不可恢复。
-     * 删除前校验图书是否存在。
+     * 逻辑删除指定 ID 的图书记录（MyBatis-Plus @TableLogic 自动处理），
+     * 删除后图书记录仍保留在数据库中，但查询时自动过滤。
      * </p>
      *
      * @param id 要删除的图书 ID
@@ -239,7 +239,7 @@ public class BookServiceImpl implements BookService {
         if (book == null) {
             throw new BusinessException(404, ErrorCode.BOOK_NOT_FOUND);
         }
-        // 2. 执行物理删除（不可恢复，操作前需确认）
+        // 2. 执行逻辑删除（MyBatis-Plus 自动将 is_deleted 设为 1）
         bookMapper.deleteById(id);
     }
 

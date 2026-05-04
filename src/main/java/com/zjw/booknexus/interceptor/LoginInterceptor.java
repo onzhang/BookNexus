@@ -19,6 +19,7 @@
 package com.zjw.booknexus.interceptor;
 
 import com.zjw.booknexus.utils.JwtUtils;
+import com.zjw.booknexus.utils.UserContext;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,14 +28,8 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 public class LoginInterceptor implements HandlerInterceptor {
 
-    /** JWT 工具类，提供 Token 解析能力 */
     private final JwtUtils jwtUtils;
 
-    /**
-     * 构造登录拦截器
-     *
-     * @param jwtUtils JWT 工具类，用于 Token 解析与校验
-     */
     public LoginInterceptor(JwtUtils jwtUtils) {
         this.jwtUtils = jwtUtils;
     }
@@ -90,9 +85,8 @@ public class LoginInterceptor implements HandlerInterceptor {
                 return false;
             }
 
-            // 8. 将用户信息注入到 request attribute 中，供后续业务层通过 UserContext 获取
-            request.setAttribute("userId", userId);
-            request.setAttribute("role", role);
+            // 8. 将用户信息注入 UserContext（ThreadLocal），供 Service 层直接获取
+            UserContext.set(userId, role);
         } catch (JwtException e) {
             // 9. 令牌解析失败（签名无效或已过期），返回 401
             sendJson(response, 401, "{\"code\":401,\"message\":\"invalid or expired token\"}");
