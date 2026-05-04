@@ -1,13 +1,16 @@
 package com.zjw.booknexus.controller;
 
+import com.zjw.booknexus.common.PageResult;
 import com.zjw.booknexus.common.Result;
 import com.zjw.booknexus.dto.BookCreateReq;
+import com.zjw.booknexus.dto.BookPageReq;
 import com.zjw.booknexus.dto.BookUpdateReq;
 import com.zjw.booknexus.service.BookService;
 import com.zjw.booknexus.vo.BookVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -31,6 +34,22 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminBookController {
 
     private final BookService bookService;
+
+    /**
+     * 管理员分页查询图书接口。
+     * <p>
+     * GET /api/v1/admin/books
+     * 支持按关键词（书名、作者、ISBN）、图书状态、书架 ID 进行筛选，
+     * 结果按创建时间倒序排列。
+     * </p>
+     *
+     * @param req 分页查询参数
+     * @return 图书分页结果统一响应
+     */
+    @GetMapping
+    public Result<PageResult<BookVO>> page(BookPageReq req) {
+        return Result.success(bookService.page(req));
+    }
 
     /**
      * 创建图书接口。

@@ -99,6 +99,7 @@ import { ref, onMounted } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '@/api'
+import { AdminAPI } from '@/api/endpoints'
 import type { BorrowRecord } from '@/types'
 
 /** 表格加载状态 */
@@ -158,7 +159,7 @@ async function fetchBorrows() {
     if (keyword.value) params.keyword = keyword.value
     if (statusFilter.value) params.status = statusFilter.value
 
-    const res = await api.get('/v1/admin/borrows', { params })
+    const res = await api.get(AdminAPI.BORROW_PAGE.path, { params })
     const data = res.data.data
     borrowList.value = data?.records ?? []
     total.value = data?.total ?? 0
@@ -199,7 +200,7 @@ async function handleForceReturn(row: BorrowRecord) {
   }
 
   try {
-    await api.put(`/v1/admin/borrows/${row.id}/return`)
+    await api.put(AdminAPI.BORROW_RETURN(row.id).path)
     ElMessage.success('已强制归还')
     fetchBorrows()
   } catch {
