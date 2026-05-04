@@ -116,8 +116,9 @@ public class BorrowServiceImpl implements BorrowService {
         record.setFineAmount(BigDecimal.ZERO);
         borrowRecordMapper.insert(record);
 
-        // 6. 同步更新图书状态为 BORROWED（标记该书已被借出）
+        // 6. 同步更新图书状态为 BORROWED 并扣减可用库存
         book.setStatus(BookStatus.BORROWED.name());
+        book.setAvailableStock(book.getAvailableStock() - 1);
         bookMapper.updateById(book);
 
         // 7. 查询用户信息并组装视图对象返回
@@ -215,10 +216,11 @@ public class BorrowServiceImpl implements BorrowService {
         // 4. 持久化更新借阅记录
         borrowRecordMapper.updateById(record);
 
-        // 5. 将图书状态恢复为 AVAILABLE，释放图书供其他用户借阅
+        // 5. 将图书状态恢复为 AVAILABLE，并恢复可用库存
         Book book = bookMapper.selectById(record.getBookId());
         if (book != null) {
             book.setStatus(BookStatus.AVAILABLE.name());
+            book.setAvailableStock(book.getAvailableStock() + 1);
             bookMapper.updateById(book);
         }
 
@@ -252,10 +254,9 @@ public class BorrowServiceImpl implements BorrowService {
             throw new BusinessException(404, ErrorCode.RECORD_NOT_FOUND);
         }
 
-        // 2. 校验记录状态：仅 BORROWED（借阅中）或 RENEWED（已续借但仍可再次续借？不，上限为 1 次）允许续借
-        // 注意：实际业务中只有 BORROWED 状态的记录可进行首次续借
+        // 2. 校验记录状态：仅 BORROWED（借阅中）状态允许续借
         String status = record.getStatus();
-        if (!BorrowStatus.BORROWED.name().equals(status) && !BorrowStatus.RENEWED.name().equals(status)) {
+        if (!BorrowStatus.BORROWED.name().equals(status)) {
             throw new BusinessException(409, ErrorCode.INVALID_STATUS);
         }
 

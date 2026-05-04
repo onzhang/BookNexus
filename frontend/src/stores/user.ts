@@ -14,6 +14,8 @@ import request, { TOKEN_KEY } from '@/api'
 
 /** localStorage 中存储用户信息的键名 */
 const USER_KEY = 'booknexus_user'
+/** localStorage 中存储 Refresh Token 的键名 */
+const REFRESH_TOKEN_KEY = 'booknexus_refresh_token'
 
 /** 用户认证 Store */
 export const useUserStore = defineStore('user', () => {
@@ -36,10 +38,11 @@ export const useUserStore = defineStore('user', () => {
    */
   async function login(data: LoginRequest) {
     const res = await request.post<LoginResponse>('/v1/public/auth/login', data)
-    const { accessToken, userId, username, role } = res.data.data
+    const { accessToken, refreshToken, userId, username, role } = res.data.data
     token.value = accessToken
     userInfo.value = { id: userId, username, role, status: 1, createdAt: '', updatedAt: '' } as User
     localStorage.setItem(TOKEN_KEY, token.value)
+    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken)
     localStorage.setItem(USER_KEY, JSON.stringify(userInfo.value))
   }
 
@@ -49,10 +52,11 @@ export const useUserStore = defineStore('user', () => {
    */
   async function register(data: RegisterRequest) {
     const res = await request.post<LoginResponse>('/v1/public/auth/register', data)
-    const { accessToken, userId, username, role } = res.data.data
+    const { accessToken, refreshToken, userId, username, role } = res.data.data
     token.value = accessToken
     userInfo.value = { id: userId, username, role, status: 1, createdAt: '', updatedAt: '' } as User
     localStorage.setItem(TOKEN_KEY, token.value)
+    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken)
     localStorage.setItem(USER_KEY, JSON.stringify(userInfo.value))
   }
 
@@ -68,6 +72,7 @@ export const useUserStore = defineStore('user', () => {
     token.value = ''
     userInfo.value = null
     localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(REFRESH_TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
   }
 
