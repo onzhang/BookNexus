@@ -1,93 +1,120 @@
-/*
- * Copyright (c) 2026 BookNexus. All rights reserved.
+/**
+ * JWT 登录拦截器
+ * <p>基于 {@link HandlerInterceptor} 实现对 API 请求的认证与授权。
+ * 拦截所有非 OPTIONS 请求，验证请求头中的 Bearer Token，</p>
  *
- * 登录认证拦截器，校验请求头中的 JWT Token 有效性
+ * <p>核心功能：</p>
+ * <ul>
+ *   <li>Token 解析与校验 — 调用 {@link JwtUtils#parseToken(String)} 解析 JWT，验证签名和过期时间</li>
+ *   <li>Token 类型校验 — 仅接受 {@code type=access} 的 Access Token，拒绝 Refresh Token</li>
+ *   <li>管理端权限校验 — {@code /api/v1/admin/**} 路径仅允许 ADMIN 角色访问</li>
+ *   <li>用户信息注入 — 将 userId 和 role 写入 request attribute，供后续业务层使用</li>
+ * </ul>
+ *
+ * <p>校验失败时直接返回 JSON 响应（401/403），不继续执行请求链。</p>
  *
  * @author 张俊文
- * @since 2026-04-29
+ * @since 2026-04-30
  */
 package com.zjw.booknexus.interceptor;
 
+import com.zjw.booknexus.utils.JwtUtils;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.servlet.HandlerInterceptor;
 
-/**
- * 登录认证拦截器
- * <p>拦截 /api/v1/admin/** 和 /api/v1/user/** 请求，从请求头中提取 JWT Token
- * 并校验其有效性，校验失败则返回 401 响应。</p>
- *
- * <h3>M3 阶段实现计划：</h3>
- * <ol>
- *   <li><b>Token 提取</b> — 从请求头获取 {@code Authorization} 值，校验 Bearer 前缀</li>
- *   <li><b>Token 解析</b> — 使用 jjwt 库
- *       {@code Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token)}
- *       解析 JWT，获取 Claims 中的用户信息（userId、role）</li>
- *   <li><b>角色校验</b> — 根据请求路径判断角色：
- *       {@code /api/v1/admin/**} 需 {@code admin} 角色，
- *       {@code /api/v1/user/**} 需 {@code user} 或 {@code admin} 角色</li>
- *   <li><b>Token 过期检查</b> — 校验 Claims 中的 {@code exp} 字段，过期返回 401</li>
- *   <li><b>放行／拒绝</b> — 校验通过则将 {@code userId} 存入
- *       {@code request.setAttribute("userId", ...)} 供 Controller 使用；
- *       校验失败返回 401 JSON 响应</li>
- * </ol>
- */
 public class LoginInterceptor implements HandlerInterceptor {
 
+    /** JWT 工具类，提供 Token 解析能力 */
+    private final JwtUtils jwtUtils;
+
     /**
-     * 请求前置处理 — M3 阶段实现 JWT 验证
+     * 构造登录拦截器
      *
-     * <p>实现步骤：</p>
-     * <pre>
-     * 1. Token 提取
-     *    String authHeader = request.getHeader("Authorization");
-     *    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-     *        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-     *        response.setContentType("application/json;charset=UTF-8");
-     *        response.getWriter().write("{\"code\":401,\"message\":\"unauthorized\"}");
-     *        return false;
-     *    }
-     *    String token = authHeader.substring(7);
-     *
-     * 2. Token 解析（jjwt）
-     *    try {
-     *        Claims claims = Jwts.parser()
-     *                .verifyWith(SECRET_KEY)
-     *                .build()
-     *                .parseSignedClaims(token)
-     *                .getPayload();
-     *        Long userId = claims.get("userId", Long.class);
-     *        String role = claims.get("role", String.class);
-     *
-     * 3. 角色校验
-     *        String path = request.getRequestURI();
-     *        if (path.startsWith("/api/v1/admin/") && !"admin".equals(role)) {
-     *            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-     *            response.setContentType("application/json;charset=UTF-8");
-     *            response.getWriter().write("{\"code\":403,\"message\":\"forbidden\"}");
-     *            return false;
-     *        }
-     *
-     * 4. 放行 — 存入请求属性
-     *        request.setAttribute("userId", userId);
-     *        request.setAttribute("role", role);
-     *    } catch (JwtException e) {
-     *        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-     *        response.setContentType("application/json;charset=UTF-8");
-     *        response.getWriter().write("{\"code\":401,\"message\":\"invalid token\"}");
-     *        return false;
-     *    }
-     * </pre>
+     * @param jwtUtils JWT 工具类，用于 Token 解析与校验
+     */
+    public LoginInterceptor(JwtUtils jwtUtils) {
+        this.jwtUtils = jwtUtils;
+    }
+
+    /**
+     * 前置拦截 — 执行认证与授权校验
+     * <p>处理流程：OPTIONS 预检请求直接放行 → 提取 Authorization 头 → 解析并校验 Token →
+     * 校验 Token 类型 → 校验管理端权限 → 注入用户信息到请求上下文。</p>
      *
      * @param request  当前 HTTP 请求
-     * @param response HTTP 响应
-     * @param handler  请求处理器
-     * @return true=放行，false=拦截
+     * @param response 当前 HTTP 响应
+     * @param handler  被调用的处理器对象
+     * @return true 放行请求，false 拦截请求并返回错误响应
+     * @throws Exception 处理过程中可能抛出的异常
      */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        // TODO: M3 阶段实现 JWT Token 解析与校验（参见类注释实现步骤）
+        // 1. 放行 OPTIONS 预检请求，浏览器跨域时需要
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
+
+        // 2. 从请求头中提取 Authorization: Bearer <token>
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            // 缺少令牌或格式错误，返回 401 未授权
+            sendJson(response, 401, "{\"code\":401,\"message\":\"unauthorized\"}");
+            return false;
+        }
+
+        // 3. 截取 Bearer 后的实际 Token 字符串
+        String token = authHeader.substring(7);
+
+        try {
+            // 4. 解析 JWT：验证签名和过期时间
+            Claims claims = jwtUtils.parseToken(token);
+
+            // 5. 校验令牌类型：仅接受 type=access 的 Access Token，拒绝 Refresh Token 用于 API 认证
+            String type = claims.get("type", String.class);
+            if (!"access".equals(type)) {
+                sendJson(response, 401, "{\"code\":401,\"message\":\"invalid token type\"}");
+                return false;
+            }
+
+            // 6. 提取用户身份信息
+            Long userId = claims.get("userId", Long.class);
+            String role = claims.get("role", String.class);
+
+            // 7. 管理端权限校验：admin 路径仅限 ADMIN 角色访问
+            String path = request.getRequestURI();
+            if (path.startsWith("/api/v1/admin/") && !"ADMIN".equals(role)) {
+                sendJson(response, 403, "{\"code\":403,\"message\":\"admin access required\"}");
+                return false;
+            }
+
+            // 8. 将用户信息注入到 request attribute 中，供后续业务层通过 UserContext 获取
+            request.setAttribute("userId", userId);
+            request.setAttribute("role", role);
+        } catch (JwtException e) {
+            // 9. 令牌解析失败（签名无效或已过期），返回 401
+            sendJson(response, 401, "{\"code\":401,\"message\":\"invalid or expired token\"}");
+            return false;
+        }
+
+        // 10. 校验通过，放行请求
         return true;
     }
 
+    /**
+     * 发送 JSON 格式的错误响应
+     *
+     * @param response HTTP 响应对象
+     * @param status   HTTP 状态码
+     * @param body     JSON 响应体字符串
+     * @throws Exception 写入响应时可能抛出的异常
+     */
+    private void sendJson(HttpServletResponse response, int status, String body) throws Exception {
+        // 设置 HTTP 状态码和 Content-Type，写入 JSON 格式的错误响应体
+        response.setStatus(status);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(body);
+    }
 }

@@ -1,14 +1,23 @@
+<!--
+  ============================================================
+  Login.vue — 登录/注册页面
+  @description 提供用户登录和注册功能，支持登录/注册模式切换。
+               使用 Element Plus 表单验证，登录成功后根据角色自动跳转。
+  @author 张俊文
+  @date 2026-05-01
+  ============================================================
+-->
 <template>
   <div class="login-container">
     <div class="login-card">
       <h1 class="login-title">BookNexus 图书管理系统</h1>
-      <p class="login-subtitle">欢迎登录</p>
+      <p class="login-subtitle">{{ isRegister ? '创建新账号' : '欢迎登录' }}</p>
       <el-form
         ref="formRef"
         :model="form"
         :rules="rules"
         class="login-form"
-        @submit.prevent="handleLogin"
+        @submit.prevent
       >
         <el-form-item prop="username">
           <el-input
@@ -28,24 +37,39 @@
             show-password
           />
         </el-form-item>
+        <!-- 注册模式下的邮箱输入 -->
+        <el-form-item v-if="isRegister" prop="email">
+          <el-input
+            v-model="form.email"
+            placeholder="请输入邮箱"
+            prefix-icon="Message"
+            size="large"
+          />
+        </el-form-item>
         <el-form-item>
           <el-button
             type="primary"
             size="large"
             class="login-btn"
             :loading="loading"
-            @click="handleLogin"
+            @click="handleSubmit"
           >
-            登录
+            {{ isRegister ? '注册' : '登录' }}
           </el-button>
         </el-form-item>
       </el-form>
+      <div class="login-footer">
+        <span>{{ isRegister ? '已有账号？' : '没有账号？' }}</span>
+        <el-button link type="primary" @click="toggleMode">
+          {{ isRegister ? '去登录' : '去注册' }}
+        </el-button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -54,37 +78,79 @@ import { useUserStore } from '@/stores/user'
 const router = useRouter()
 const userStore = useUserStore()
 
+/** 表单引用 */
 const formRef = ref<FormInstance>()
+/** 提交按钮加载状态 */
 const loading = ref(false)
+/** 是否为注册模式 */
+const isRegister = ref(false)
 
+/** 登录/注册表单数据 */
 const form = reactive({
   username: '',
-  password: ''
+  password: '',
+  email: ''
 })
 
+/** 表单校验规则 */
 const rules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 3, message: '密码长度不少于3位', trigger: 'blur' }
+  ],
+  email: [
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
   ]
 }
 
-const handleLogin = async () => {
+/** 切换登录/注册模式 */
+function toggleMode() {
+  isRegister.value = !isRegister.value
+  formRef.value?.resetFields()
+  form.email = ''
+}
+
+onMounted(() => {
+  if (userStore.isLoggedIn) {
+    router.push(userStore.isAdmin ? '/admin/dashboard' : '/user/home')
+  }
+})
+
+/**
+ * 提交登录或注册
+ * @description 先校验表单，再调用对应接口，成功后根据角色跳转
+ */
+const handleSubmit = async () => {
   if (!formRef.value) return
-  await formRef.value.validate(async (valid) => {
-    if (!valid) return
-    loading.value = true
-    try {
-      await userStore.login(form)
+  try {
+    await formRef.value.validate()
+  } catch {
+    return
+  }
+  loading.value = true
+  try {
+    if (isRegister.value) {
+      await userStore.register({
+        username: form.username,
+        password: form.password,
+        email: form.email
+      })
+      ElMessage.success('注册成功')
+    } else {
+      await userStore.login({
+        username: form.username,
+        password: form.password
+      })
       ElMessage.success('登录成功')
-      router.push('/')
-    } catch {
-      ElMessage.error('登录失败，请检查用户名和密码')
-    } finally {
-      loading.value = false
     }
-  })
+    router.push(userStore.isAdmin ? '/admin/dashboard' : '/user/home')
+  } catch {
+    // Error already shown by interceptor
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
@@ -98,7 +164,7 @@ const handleLogin = async () => {
 }
 
 .login-card {
-  width: 400px;
+  width: 420px;
   padding: 40px;
   background: #fff;
   border-radius: 12px;
@@ -123,5 +189,11 @@ const handleLogin = async () => {
   .login-btn {
     width: 100%;
   }
+}
+
+.login-footer {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
 }
 </style>

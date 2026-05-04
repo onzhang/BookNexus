@@ -10,6 +10,7 @@
 | 状态 | **M2 已完成** — 数据库设计 + 前端脚手架就绪，**可进入 M3 核心功能开发** |
 | 工期 | 预计 30 个工作日，共 6 个里程碑 |
 | 最新计划 | `docs/项目计划书.md`（v2.0 最终版，含脑暴决议） |
+When you need to search docs, use `context7` tools.
 
 ## 进度状态
 
@@ -379,3 +380,4 @@ git merge feature/xxx
 | 提交信息写错 | `git commit --amend` 修改（仅限本地未 push） |
 | 想放弃本地修改 | `git restore .` 丢弃所有修改 |
 | 暂存当前工作 | `git stash` 暂存，`git stash pop` 恢复 |
+

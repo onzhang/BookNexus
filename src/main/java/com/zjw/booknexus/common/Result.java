@@ -13,9 +13,23 @@ import java.time.format.DateTimeFormatter;
 
 /**
  * 统一 API 响应结果
- * <p>所有 Controller 接口统一返回此类型，保证前端响应格式一致。</p>
+ * <p>所有 Controller 接口统一返回此类型，保证前端响应格式一致。
+ * 支持流体式链式调用，可通过 {@link #requestId(String)} 注入请求追踪 ID。</p>
+ *
+ * <p>响应示例：</p>
+ * <pre>
+ * {
+ *   "code": 200,
+ *   "message": "ok",
+ *   "data": { ... },
+ *   "requestId": "a1b2c3d4e5f6",
+ *   "timestamp": "2026-04-30T10:30:00+08:00"
+ * }
+ * </pre>
  *
  * @param <T> 响应数据类型
+ * @author 张俊文
+ * @since 2026-04-30
  */
 public class Result<T> {
 

@@ -1,8 +1,20 @@
+/**
+ * BookNexus — Axios HTTP 客户端
+ *
+ * @description 创建并配置 Axios 实例，封装统一的请求/响应拦截器。
+ *              - 请求拦截器：自动携带 JWT Token
+ *              - 响应拦截器：统一错误处理、401 自动跳转登录
+ * @author 张俊文
+ * @date 2026-05-01
+ */
+
 import axios, { type AxiosInstance } from 'axios'
 import { ElMessage } from 'element-plus'
 
+/** localStorage 中存储 Token 的键名 */
 const TOKEN_KEY = 'booknexus_token'
 
+/** Axios 实例 — 带默认配置 */
 const request: AxiosInstance = axios.create({
   baseURL: '/api',
   timeout: 15000,
@@ -11,6 +23,9 @@ const request: AxiosInstance = axios.create({
   }
 })
 
+/**
+ * 请求拦截器 — 自动从 localStorage 读取 Token 并注入 Authorization 请求头
+ */
 request.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem(TOKEN_KEY)
@@ -24,6 +39,9 @@ request.interceptors.request.use(
   }
 )
 
+/**
+ * 响应拦截器 — 统一处理业务错误（code !== 200）和 HTTP 错误（401 过期等）
+ */
 request.interceptors.response.use(
   (response) => {
     const res = response.data
