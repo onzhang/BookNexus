@@ -100,6 +100,7 @@ import { ref, onMounted } from 'vue'
 import { Picture } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import api from '@/api'
+import { UserAPI } from '@/api/endpoints'
 import type { BorrowRecordVO, PageResult } from '@/types'
 
 /** 借阅记录列表 */
@@ -149,7 +150,7 @@ function statusTagType(status: string) {
 async function fetchRecords() {
   loading.value = true
   try {
-    const res = await api.get<PageResult<BorrowRecordVO>>('/v1/user/borrows', {
+    const res = await api.get<PageResult<BorrowRecordVO>>(UserAPI.BORROW_MY_PAGE.path, {
       params: { page: page.value, size: size.value }
     })
     const data = res.data.data
@@ -169,7 +170,7 @@ async function fetchRecords() {
  */
 async function handleReturn(id: number) {
   try {
-    await api.put(`/v1/user/borrows/${id}/return`)
+    await api.put(UserAPI.BORROW_RETURN(id).path)
     ElMessage.success('归还成功')
     fetchRecords()
   } catch {
@@ -183,7 +184,7 @@ async function handleReturn(id: number) {
  */
 async function handleRenew(id: number) {
   try {
-    await api.put(`/v1/user/borrows/${id}/renew`)
+    await api.put(UserAPI.BORROW_RENEW(id).path)
     ElMessage.success('续借成功')
     fetchRecords()
   } catch {

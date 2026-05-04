@@ -99,6 +99,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Picture } from '@element-plus/icons-vue'
 import api from '@/api'
+import { PublicAPI } from '@/api/endpoints'
 import type { BookVO, PageResult } from '@/types'
 
 const router = useRouter()
@@ -161,7 +162,7 @@ async function fetchBooks() {
   try {
     const params: Record<string, unknown> = { page: page.value, size: size.value }
     if (keyword.value) params.keyword = keyword.value
-    const res = await api.get<PageResult<BookVO>>('/v1/public/books', { params })
+    const res = await api.get<PageResult<BookVO>>(PublicAPI.BOOK_PAGE.path, { params })
     const data = res.data.data
     books.value = data?.records ?? []
     total.value = data?.total ?? 0

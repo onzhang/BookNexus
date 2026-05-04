@@ -85,6 +85,18 @@ const routes: RouteRecordRaw[] = [
         name: 'AdminBooks',
         component: () => import('@/views/admin/Books.vue'),
         meta: { title: '书籍管理' }
+      },
+      {
+        path: 'users',
+        name: 'AdminUsers',
+        component: () => import('@/views/admin/Users.vue'),
+        meta: { title: '用户管理' }
+      },
+      {
+        path: 'borrows',
+        name: 'AdminBorrows',
+        component: () => import('@/views/admin/Borrows.vue'),
+        meta: { title: '借阅管理' }
       }
     ]
   },

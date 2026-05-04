@@ -109,6 +109,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import api from '@/api'
+import { AdminAPI } from '@/api/endpoints'
 import type { User } from '@/types'
 import type { FormInstance, FormRules } from 'element-plus'
 
@@ -154,7 +155,7 @@ async function fetchUsers() {
     const params: Record<string, unknown> = { page: page.value, size: size.value }
     if (keyword.value) params.keyword = keyword.value
 
-    const res = await api.get('/v1/admin/users', { params })
+    const res = await api.get(AdminAPI.USER_PAGE.path, { params })
     const data = res.data.data
     userList.value = data?.records ?? []
     total.value = data?.total ?? 0
@@ -202,7 +203,7 @@ async function handleSubmit() {
 
   submitting.value = true
   try {
-    await api.put(`/v1/admin/users/${editUser.value.id}`, {
+    await api.put(AdminAPI.USER_UPDATE(editUser.value.id).path, {
       email: form.email,
       phone: form.phone
     })
@@ -223,7 +224,7 @@ async function handleSubmit() {
  */
 async function handleStatusChange(user: User, enabled: boolean) {
   try {
-    await api.put(`/v1/admin/users/${user.id}`, {
+    await api.put(AdminAPI.USER_STATUS(user.id).path, {
       status: enabled ? 'ENABLED' : 'DISABLED'
     })
     user.status = enabled ? 'ENABLED' : 'DISABLED'

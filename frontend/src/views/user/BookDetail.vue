@@ -94,6 +94,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Picture } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import api from '@/api'
+import { PublicAPI, UserAPI } from '@/api/endpoints'
 import type { BookVO } from '@/types'
 
 const route = useRoute()
@@ -149,7 +150,7 @@ async function fetchBook() {
   if (!id) return
   loading.value = true
   try {
-    const res = await api.get<BookVO>(`/v1/public/books/${id}`)
+    const res = await api.get<BookVO>(PublicAPI.BOOK_DETAIL(id).path)
     book.value = res.data.data
   } catch {
     book.value = null
@@ -163,7 +164,7 @@ async function handleBorrow() {
   if (!book.value) return
   borrowing.value = true
   try {
-    await api.post('/v1/user/borrows', { bookId: book.value.id })
+    await api.post(UserAPI.BORROW_CREATE.path, { bookId: book.value.id })
     ElMessage.success('借阅成功')
     fetchBook()
   } catch {

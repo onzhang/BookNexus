@@ -97,6 +97,7 @@
 import { ref, onMounted, reactive } from 'vue'
 import { Reading, User, Document, WarningFilled } from '@element-plus/icons-vue'
 import api from '@/api'
+import { AdminAPI } from '@/api/endpoints'
 import type { BorrowRecord } from '@/types'
 
 /** 表格加载状态 */
@@ -150,10 +151,10 @@ function statusTagType(status: string) {
 async function fetchStats() {
   try {
     const [bookRes, userRes, borrowRes, overdueRes] = await Promise.allSettled([
-      api.get('/v1/admin/books', { params: { page: 1, size: 1 } }),
-      api.get('/v1/admin/users', { params: { page: 1, size: 1 } }),
-      api.get('/v1/admin/borrows', { params: { page: 1, size: 1, status: 'BORROWED' } }),
-      api.get('/v1/admin/borrows', { params: { page: 1, size: 1, status: 'OVERDUE' } })
+      api.get(AdminAPI.BOOK_PAGE.path, { params: { page: 1, size: 1 } }),
+      api.get(AdminAPI.USER_PAGE.path, { params: { page: 1, size: 1 } }),
+      api.get(AdminAPI.BORROW_PAGE.path, { params: { page: 1, size: 1, status: 'BORROWED' } }),
+      api.get(AdminAPI.BORROW_PAGE.path, { params: { page: 1, size: 1, status: 'OVERDUE' } })
     ])
 
     if (bookRes.status === 'fulfilled') {
@@ -177,7 +178,7 @@ async function fetchStats() {
 async function fetchRecentBorrows() {
   loading.value = true
   try {
-    const res = await api.get('/v1/admin/borrows', { params: { page: 1, size: 5 } })
+    const res = await api.get(AdminAPI.BORROW_PAGE.path, { params: { page: 1, size: 5 } })
     borrowList.value = res.data.data?.records ?? []
   } catch {
     borrowList.value = []

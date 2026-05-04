@@ -11,6 +11,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User, LoginRequest, RegisterRequest, LoginResponse } from '@/types'
 import request, { TOKEN_KEY } from '@/api'
+import { PublicAPI, UserAPI } from '@/api/endpoints'
 
 /** localStorage 中存储用户信息的键名 */
 const USER_KEY = 'booknexus_user'
@@ -37,7 +38,7 @@ export const useUserStore = defineStore('user', () => {
    * @param data - 登录请求（用户名 + 密码）
    */
   async function login(data: LoginRequest) {
-    const res = await request.post<LoginResponse>('/v1/public/auth/login', data)
+    const res = await request.post<LoginResponse>(PublicAPI.AUTH_LOGIN.path, data)
     const { accessToken, refreshToken, userId, username, role } = res.data.data
     token.value = accessToken
     userInfo.value = { id: userId, username, role, status: 1, createdAt: '', updatedAt: '' } as User
@@ -51,7 +52,7 @@ export const useUserStore = defineStore('user', () => {
    * @param data - 注册请求（用户名 + 密码 + 邮箱）
    */
   async function register(data: RegisterRequest) {
-    const res = await request.post<LoginResponse>('/v1/public/auth/register', data)
+    const res = await request.post<LoginResponse>(PublicAPI.AUTH_REGISTER.path, data)
     const { accessToken, refreshToken, userId, username, role } = res.data.data
     token.value = accessToken
     userInfo.value = { id: userId, username, role, status: 1, createdAt: '', updatedAt: '' } as User
@@ -62,7 +63,7 @@ export const useUserStore = defineStore('user', () => {
 
   /** 获取当前用户详细信息（调用 /me 接口） */
   async function getInfo() {
-    const res = await request.get<ApiResponse<User>>('/v1/user/auth/me')
+    const res = await request.get<ApiResponse<User>>(UserAPI.AUTH_ME.path)
     userInfo.value = res.data.data
     localStorage.setItem(USER_KEY, JSON.stringify(userInfo.value))
   }

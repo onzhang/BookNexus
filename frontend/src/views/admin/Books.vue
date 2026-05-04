@@ -128,6 +128,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '@/api'
+import { AdminAPI } from '@/api/endpoints'
 import type { Book, BookForm } from '@/types'
 import type { FormInstance, FormRules } from 'element-plus'
 
@@ -222,7 +223,7 @@ async function fetchBooks() {
     if (keyword.value) params.keyword = keyword.value
     if (statusFilter.value) params.status = statusFilter.value
 
-    const res = await api.get('/v1/admin/books', { params })
+    const res = await api.get(AdminAPI.BOOK_PAGE.path, { params })
     const data = res.data.data
     bookList.value = data?.records ?? []
     total.value = data?.total ?? 0
@@ -287,10 +288,10 @@ async function handleSubmit() {
   submitting.value = true
   try {
     if (isEdit.value && editId.value) {
-      await api.put(`/v1/admin/books/${editId.value}`, form)
+      await api.put(AdminAPI.BOOK_UPDATE(editId.value).path, form)
       ElMessage.success('编辑成功')
     } else {
-      await api.post('/v1/admin/books', form)
+      await api.post(AdminAPI.BOOK_CREATE.path, form)
       ElMessage.success('新增成功')
     }
     dialogVisible.value = false
@@ -318,7 +319,7 @@ async function handleDelete(book: Book) {
   }
 
   try {
-    await api.delete(`/v1/admin/books/${book.id}`)
+    await api.delete(AdminAPI.BOOK_DELETE(book.id).path)
     ElMessage.success('删除成功')
     fetchBooks()
   } catch {

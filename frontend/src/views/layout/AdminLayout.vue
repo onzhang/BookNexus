@@ -40,10 +40,6 @@
           <el-icon><Document /></el-icon>
           <template #title>借阅管理</template>
         </el-menu-item>
-        <el-menu-item index="/user/home">
-          <el-icon><HomeFilled /></el-icon>
-          <template #title>返回首页</template>
-        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -80,7 +76,6 @@ import {
   User,
   Reading,
   Document,
-  HomeFilled,
   Expand,
   Fold
 } from '@element-plus/icons-vue'
