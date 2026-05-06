@@ -53,7 +53,7 @@ public class FavoriteServiceImpl implements FavoriteService {
      *         当已收藏该书时抛出 409 异常
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public FavoriteVO addFavorite(Long userId, FavoriteReq req) {
         // 1. 校验图书是否存在
         Book book = bookMapper.selectById(req.getBookId());
@@ -92,7 +92,7 @@ public class FavoriteServiceImpl implements FavoriteService {
      * @throws BusinessException 当收藏记录不存在时抛出 404 异常
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void removeFavorite(Long userId, Long bookId) {
         // 按用户 ID 和图书 ID 精确查询收藏记录
         Favorite favorite = favoriteMapper.selectOne(new LambdaQueryWrapper<Favorite>()

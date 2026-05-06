@@ -1,6 +1,7 @@
 package com.zjw.booknexus.dto;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 /**
@@ -21,6 +22,7 @@ public class UserUpdateReq {
     private String email;
 
     /** 手机号码 */
+    @Pattern(regexp = "^1[3-9]\\d{9}$", message = "手机号格式不正确")
     private String phone;
 
     /** 用户状态（ENABLED / DISABLED） */

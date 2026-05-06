@@ -139,7 +139,7 @@ public class BookServiceImpl implements BookService {
      */
     @Override
     @SentinelResource(value = "bookCreate", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public BookVO create(BookCreateReq req) {
         // 1. 校验 ISBN 唯一性：防止录入已存在的重复图书
         checkDuplicateIsbn(req.getIsbn(), null);
@@ -180,7 +180,7 @@ public class BookServiceImpl implements BookService {
     @Override
     @SentinelResource(value = "bookUpdate", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
     @CacheEvict(value = "book", key = "#id")
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public BookVO update(Long id, BookUpdateReq req) {
         // 1. 查询待更新图书是否存在
         Book book = bookMapper.selectById(id);
@@ -244,7 +244,7 @@ public class BookServiceImpl implements BookService {
     @Override
     @SentinelResource(value = "bookDelete", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
     @CacheEvict(value = "book", key = "#id")
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
         // 1. 校验图书是否存在，不存在则直接抛出 404
         Book book = bookMapper.selectById(id);

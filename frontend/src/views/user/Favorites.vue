@@ -31,7 +31,6 @@
           stripe
           border
           style="width: 100%"
-          v-loading="loading"
         >
           <el-table-column label="封面" width="80">
             <template #default="{ row }">

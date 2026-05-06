@@ -54,7 +54,6 @@
           stripe
           border
           style="width: 100%"
-          v-loading="loading"
         >
           <el-table-column prop="content" label="留言内容" min-width="240" show-overflow-tooltip />
           <el-table-column prop="reply" label="管理员回复" min-width="200" show-overflow-tooltip>

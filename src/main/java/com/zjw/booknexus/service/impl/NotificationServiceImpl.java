@@ -77,7 +77,7 @@ public class NotificationServiceImpl implements NotificationService {
      * @throws BusinessException 当通知不存在或不属于当前用户时抛出 404 异常
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void markAsRead(Long id, Long userId) {
         Notification notification = notificationMapper.selectById(id);
         if (notification == null) {

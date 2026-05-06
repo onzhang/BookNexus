@@ -108,7 +108,7 @@ public class BookshelfServiceImpl implements BookshelfService {
      * @throws BusinessException 当书架名称已存在时抛出 409 异常
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public BookshelfVO create(BookshelfCreateReq req) {
         checkDuplicateName(req.getName(), null);
 
@@ -131,7 +131,7 @@ public class BookshelfServiceImpl implements BookshelfService {
      * @throws BusinessException 当书架不存在时抛出 404 异常，当名称重复时抛出 409 异常
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public BookshelfVO update(Long id, BookshelfUpdateReq req) {
         Bookshelf bookshelf = bookshelfMapper.selectById(id);
         if (bookshelf == null) {
@@ -163,7 +163,7 @@ public class BookshelfServiceImpl implements BookshelfService {
      * @throws BusinessException 当书架不存在时抛出 404 异常
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
         Bookshelf bookshelf = bookshelfMapper.selectById(id);
         if (bookshelf == null) {

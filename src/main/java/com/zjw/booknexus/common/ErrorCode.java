@@ -56,6 +56,10 @@ public final class ErrorCode {
     public static final String CATEGORY_NOT_FOUND = "CATEGORY_NOT_FOUND";
     /** 分类名称已存在 */
     public static final String DUPLICATE_CATEGORY_NAME = "DUPLICATE_CATEGORY_NAME";
+    /** 不能将分类的父分类设为其自身 */
+    public static final String SELF_PARENT = "SELF_PARENT";
+    /** 该分类下存在子分类，无法删除 */
+    public static final String HAS_CHILDREN = "HAS_CHILDREN";
 
     /** 书架不存在 */
     public static final String BOOKSHELF_NOT_FOUND = "BOOKSHELF_NOT_FOUND";

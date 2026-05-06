@@ -97,7 +97,7 @@ public class MessageServiceImpl implements MessageService {
      * @return 新创建的留言视图对象
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public MessageVO create(MessageCreateReq req, Long userId) {
         Message message = new Message();
         BeanUtil.copyProperties(req, message);
@@ -120,7 +120,7 @@ public class MessageServiceImpl implements MessageService {
      * @throws BusinessException 当留言不存在时抛出 404 异常
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public MessageVO reply(Long id, MessageReplyReq req, Long replierId) {
         Message message = messageMapper.selectById(id);
         if (message == null) {

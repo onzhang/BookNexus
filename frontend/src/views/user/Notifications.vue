@@ -38,7 +38,6 @@
           stripe
           border
           style="width: 100%"
-          v-loading="loading"
         >
           <el-table-column prop="title" label="标题" min-width="180" />
           <el-table-column prop="content" label="内容" min-width="240" show-overflow-tooltip />

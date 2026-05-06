@@ -57,7 +57,7 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     @SentinelResource(value = "register", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public LoginResp register(RegisterReq req) {
         // 1. 校验用户名唯一性：若已存在则拒绝注册，防止重复用户名
         if (userMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getUsername, req.getUsername())) > 0) {
@@ -147,6 +147,9 @@ public class AuthServiceImpl implements AuthService {
 
         // 3. 从令牌中提取用户身份信息
         Long userId = claims.get("userId", Long.class);
+        if (userId == null) {
+            throw new BusinessException(401, ErrorCode.TOKEN_INVALID);
+        }
         String role = claims.get("role", String.class);
 
         // 4. 校验刷新令牌是否仍存在于 Redis（防止已吊销的令牌被重放）

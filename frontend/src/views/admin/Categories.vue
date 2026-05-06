@@ -114,14 +114,8 @@ import { Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '@/api'
 import { AdminAPI } from '@/api/endpoints'
-import type { Category } from '@/types'
+import type { Category, CategoryForm } from '@/types'
 import type { FormInstance, FormRules } from 'element-plus'
-
-interface CategoryForm {
-  name: string
-  parentId: number
-  sortOrder: number
-}
 
 /** 表格加载状态 */
 const loading = ref(false)

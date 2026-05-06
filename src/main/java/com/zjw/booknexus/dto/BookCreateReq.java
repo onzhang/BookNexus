@@ -2,6 +2,8 @@ package com.zjw.booknexus.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -22,6 +24,7 @@ public class BookCreateReq {
 
     /** ISBN 编号（必填） */
     @NotBlank(message = "ISBN不能为空")
+    @Pattern(regexp = "^(\\d{13}|\\d{17})$", message = "ISBN格式不正确")
     private String isbn;
 
     /** 书名（必填） */
@@ -43,6 +46,7 @@ public class BookCreateReq {
     private String coverUrl;
 
     /** 出版日期 */
+    @PastOrPresent
     private LocalDate publishedDate;
 
     /** 总库存量（默认1） */

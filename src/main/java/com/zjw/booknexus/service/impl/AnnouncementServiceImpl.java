@@ -94,7 +94,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
      * @return 新创建的公告视图对象
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public AnnouncementVO create(AnnouncementCreateReq req) {
         Announcement announcement = new Announcement();
         BeanUtil.copyProperties(req, announcement);
@@ -116,7 +116,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
      * @throws BusinessException 当公告不存在时抛出 404 异常
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public AnnouncementVO update(Long id, AnnouncementUpdateReq req) {
         Announcement announcement = announcementMapper.selectById(id);
         if (announcement == null) {
@@ -147,7 +147,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
      * @throws BusinessException 当公告不存在时抛出 404 异常
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
         Announcement announcement = announcementMapper.selectById(id);
         if (announcement == null) {

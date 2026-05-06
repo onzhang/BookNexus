@@ -144,7 +144,7 @@ public class CategoryServiceImpl implements CategoryService {
      * @throws BusinessException 当分类名称已存在时抛出 409 异常
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public CategoryVO create(CategoryCreateReq req) {
         checkDuplicateName(req.getName(), null);
 
@@ -174,7 +174,7 @@ public class CategoryServiceImpl implements CategoryService {
      * @throws BusinessException 当分类不存在时抛出 404 异常，当名称重复时抛出 409 异常
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public CategoryVO update(Long id, CategoryUpdateReq req) {
         Category category = categoryMapper.selectById(id);
         if (category == null) {
@@ -187,7 +187,7 @@ public class CategoryServiceImpl implements CategoryService {
         }
         if (req.getParentId() != null) {
             if (req.getParentId().equals(id)) {
-                throw new BusinessException(400, "不能将分类的父分类设为其自身");
+                throw new BusinessException(400, ErrorCode.SELF_PARENT);
             }
             category.setParentId(req.getParentId());
         }
@@ -209,7 +209,7 @@ public class CategoryServiceImpl implements CategoryService {
      * @throws BusinessException 当分类不存在时抛出 404 异常，当存在子分类时抛出 409 异常
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
         Category category = categoryMapper.selectById(id);
         if (category == null) {
@@ -219,7 +219,7 @@ public class CategoryServiceImpl implements CategoryService {
         LambdaQueryWrapper<Category> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Category::getParentId, id);
         if (categoryMapper.selectCount(wrapper) > 0) {
-            throw new BusinessException(409, "该分类下存在子分类，无法删除");
+            throw new BusinessException(409, ErrorCode.HAS_CHILDREN);
         }
 
         categoryMapper.deleteById(id);

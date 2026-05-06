@@ -53,7 +53,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
      *         当已订阅该书时抛出 409 异常
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public SubscriptionVO subscribe(Long userId, SubscriptionReq req) {
         // 1. 校验图书是否存在
         Book book = bookMapper.selectById(req.getBookId());
@@ -95,7 +95,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
      * @throws BusinessException 当活跃订阅记录不存在时抛出 404 异常
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void unsubscribe(Long userId, Long bookId) {
         // 按用户 ID 和图书 ID 查询活跃订阅记录
         Subscription subscription = subscriptionMapper.selectOne(new LambdaQueryWrapper<Subscription>()

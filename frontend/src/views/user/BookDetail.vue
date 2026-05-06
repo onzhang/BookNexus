@@ -168,7 +168,11 @@ function statusTagType(status: string) {
 
 /** 返回上一页 */
 function goBack() {
-  router.back()
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/user/home')
+  }
 }
 
 /** 获取书籍详情 */

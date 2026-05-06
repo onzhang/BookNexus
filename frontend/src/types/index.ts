@@ -13,7 +13,7 @@ export interface User {
   username: string
   email?: string
   phone?: string
-  avatar?: string
+  avatarUrl?: string
   /** 角色：管理员 / 普通用户 */
   role: 'ADMIN' | 'USER'
   /** 状态：ENABLED=正常，DISABLED=禁用 */
@@ -63,7 +63,7 @@ export interface BookVO {
   description?: string
   coverUrl?: string
   status: 'AVAILABLE' | 'BORROWED' | 'DAMAGED' | 'LOST'
-  categories?: string[]
+  categoryNames?: string[]
   createdAt: string
   updatedAt: string
 }
@@ -75,9 +75,9 @@ export interface BorrowRecord {
   username: string
   bookId: number
   bookTitle: string
-  borrowedAt: string
-  dueAt: string
-  returnedAt?: string
+  borrowDate: string
+  dueDate: string
+  returnDate?: string
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'BORROWED' | 'RENEWED' | 'RETURNED' | 'OVERDUE'
 }
 
@@ -88,9 +88,9 @@ export interface BorrowRecordVO {
   bookTitle: string
   bookAuthor?: string
   bookCoverUrl?: string
-  borrowedAt: string
-  dueAt: string
-  returnedAt?: string
+  borrowDate: string
+  dueDate: string
+  returnDate?: string
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'BORROWED' | 'RENEWED' | 'RETURNED'
   fineAmount?: number
 }
