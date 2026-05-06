@@ -72,7 +72,7 @@ export interface BookVO {
 export interface BorrowRecord {
   id: number
   userId: number
-  userName: string
+  username: string
   bookId: number
   bookTitle: string
   borrowedAt: string

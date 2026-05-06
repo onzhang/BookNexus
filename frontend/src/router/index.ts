@@ -123,6 +123,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '书架管理' }
       },
       {
+        path: 'categories',
+        name: 'AdminCategories',
+        component: () => import('@/views/admin/Categories.vue'),
+        meta: { title: '分类管理' }
+      },
+      {
         path: 'announcements',
         name: 'AdminAnnouncements',
         component: () => import('@/views/admin/Announcements.vue'),

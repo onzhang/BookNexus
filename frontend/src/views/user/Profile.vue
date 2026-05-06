@@ -39,9 +39,9 @@
           </el-descriptions-item>
           <el-descriptions-item label="注册时间">{{ userInfo.createdAt }}</el-descriptions-item>
           <el-descriptions-item label="账号状态">
-            <el-tag :type="userInfo.status === 1 ? 'success' : 'danger'" size="small">
-              {{ userInfo.status === 1 ? '正常' : '禁用' }}
-            </el-tag>
+<el-tag :type="userInfo.status === 'ENABLED' ? 'success' : 'danger'" size="small">
+  {{ userInfo.status === 'ENABLED' ? '正常' : '禁用' }}
+</el-tag>
           </el-descriptions-item>
         </el-descriptions>
 
