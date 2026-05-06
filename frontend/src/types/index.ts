@@ -13,11 +13,11 @@ export interface User {
   username: string
   email?: string
   phone?: string
-  avatar?: string
+  avatarUrl?: string
   /** 角色：管理员 / 普通用户 */
   role: 'ADMIN' | 'USER'
-  /** 状态：1=正常，0=禁用 */
-  status: number
+  /** 状态：ENABLED=正常，DISABLED=禁用 */
+  status: 'ENABLED' | 'DISABLED'
   createdAt: string
   updatedAt: string
 }
@@ -35,7 +35,6 @@ export interface Book {
   stock: number
   /** 当前可借库存 */
   availableStock: number
-  price: number
   description?: string
   coverUrl?: string
   createdAt: string
@@ -50,7 +49,6 @@ export interface BookForm {
   publisher?: string
   categoryId?: number
   stock: number
-  price: number
   description?: string
   coverUrl?: string
 }
@@ -65,7 +63,7 @@ export interface BookVO {
   description?: string
   coverUrl?: string
   status: 'AVAILABLE' | 'BORROWED' | 'DAMAGED' | 'LOST'
-  categories?: string[]
+  categoryNames?: string[]
   createdAt: string
   updatedAt: string
 }
@@ -74,13 +72,13 @@ export interface BookVO {
 export interface BorrowRecord {
   id: number
   userId: number
-  userName: string
+  username: string
   bookId: number
   bookTitle: string
-  borrowedAt: string
-  dueAt: string
-  returnedAt?: string
-  status: 'BORROWED' | 'RETURNED' | 'OVERDUE'
+  borrowDate: string
+  dueDate: string
+  returnDate?: string
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'BORROWED' | 'RENEWED' | 'RETURNED' | 'OVERDUE'
 }
 
 /** 借阅记录视图对象（用户端使用，含罚款和封面信息） */
@@ -90,10 +88,10 @@ export interface BorrowRecordVO {
   bookTitle: string
   bookAuthor?: string
   bookCoverUrl?: string
-  borrowedAt: string
-  dueAt: string
-  returnedAt?: string
-  status: 'PENDING' | 'BORROWED' | 'RENEWED' | 'RETURNED'
+  borrowDate: string
+  dueDate: string
+  returnDate?: string
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'BORROWED' | 'RENEWED' | 'RETURNED'
   fineAmount?: number
 }
 
@@ -125,7 +123,68 @@ export interface LoginRequest {
 export interface RegisterRequest {
   username: string
   password: string
-  email: string
+  email?: string
+}
+
+/** 收藏记录视图对象 */
+export interface FavoriteVO {
+  id: number
+  userId: number
+  bookId: number
+  bookTitle: string
+  bookAuthor?: string
+  bookCoverUrl?: string
+  bookStatus?: 'AVAILABLE' | 'BORROWED' | 'DAMAGED' | 'LOST'
+  createdAt: string
+}
+
+/** 订阅记录视图对象 */
+export interface SubscriptionVO {
+  id: number
+  userId: number
+  bookId: number
+  bookTitle: string
+  bookAuthor?: string
+  bookCoverUrl?: string
+  isActive: number
+  createdAt: string
+  updatedAt?: string
+}
+
+/** 书架实体 */
+export interface Bookshelf {
+  id: number
+  name: string
+  location?: string
+  description?: string
+  createdAt: string
+  updatedAt: string
+}
+
+/** 书架表单（新增/编辑） */
+export interface BookshelfForm {
+  name: string
+  location?: string
+  description?: string
+}
+
+/** 分类实体 */
+export interface Category {
+  id: number
+  name: string
+  parentId: number
+  parentName?: string
+  sortOrder: number
+  children?: Category[]
+  createdAt: string
+  updatedAt: string
+}
+
+/** 分类表单（新增/编辑） */
+export interface CategoryForm {
+  name: string
+  parentId: number
+  sortOrder: number
 }
 
 /** 登录响应 */
@@ -135,4 +194,51 @@ export interface LoginResponse {
   userId: number
   username: string
   role: 'ADMIN' | 'USER'
+}
+
+/** 公告实体 */
+export interface Announcement {
+  id: number
+  title: string
+  content: string
+  publisherId: number
+  isPublished: number
+  createdAt: string
+  updatedAt: string
+}
+
+/** 公告表单（新增/编辑） */
+export interface AnnouncementForm {
+  title: string
+  content: string
+  isPublished: number
+}
+
+/** 通知实体 */
+export interface Notification {
+  id: number
+  userId: number
+  type: 'SYSTEM' | 'SUBSCRIPTION' | 'OVERDUE'
+  title: string
+  content?: string
+  isRead: number
+  createdAt: string
+  updatedAt: string
+}
+
+/** 留言实体 */
+export interface Message {
+  id: number
+  userId: number
+  content: string
+  reply?: string
+  replyAt?: string
+  replierId?: number
+  createdAt: string
+  updatedAt: string
+}
+
+/** 留言回复表单 */
+export interface MessageReplyForm {
+  reply: string
 }

@@ -9,6 +9,8 @@ import com.zjw.booknexus.dto.RegisterReq;
 import com.zjw.booknexus.entity.User;
 import com.zjw.booknexus.exception.BusinessException;
 import com.zjw.booknexus.mapper.UserMapper;
+import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.zjw.booknexus.sentinel.SentinelRuleInitializer;
 import com.zjw.booknexus.service.AuthService;
 import com.zjw.booknexus.utils.JwtUtils;
 import com.zjw.booknexus.vo.UserVO;
@@ -54,7 +56,8 @@ public class AuthServiceImpl implements AuthService {
      * @throws BusinessException 当用户名或邮箱已存在时抛出 409 异常
      */
     @Override
-    @Transactional
+    @SentinelResource(value = "register", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
+    @Transactional(rollbackFor = Exception.class)
     public LoginResp register(RegisterReq req) {
         // 1. 校验用户名唯一性：若已存在则拒绝注册，防止重复用户名
         if (userMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getUsername, req.getUsername())) > 0) {
@@ -94,6 +97,7 @@ public class AuthServiceImpl implements AuthService {
      *         当账户已被禁用时抛出 403 异常
      */
     @Override
+    @SentinelResource(value = "login", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
     public LoginResp login(LoginReq req) {
         // 1. 根据用户名查询用户是否存在；不存在则返回 401 避免泄露用户是否注册
         User user = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getUsername, req.getUsername()));
@@ -126,6 +130,7 @@ public class AuthServiceImpl implements AuthService {
      * @throws BusinessException 当刷新令牌无效、已过期、类型不匹配或用户已失效时抛出 401 异常
      */
     @Override
+    @SentinelResource(value = "refresh", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
     public LoginResp refresh(RefreshReq req) {
         // 1. 解析 Refresh Token：签名或过期解析失败则判定令牌无效
         Claims claims;
@@ -142,6 +147,9 @@ public class AuthServiceImpl implements AuthService {
 
         // 3. 从令牌中提取用户身份信息
         Long userId = claims.get("userId", Long.class);
+        if (userId == null) {
+            throw new BusinessException(401, ErrorCode.TOKEN_INVALID);
+        }
         String role = claims.get("role", String.class);
 
         // 4. 校验刷新令牌是否仍存在于 Redis（防止已吊销的令牌被重放）

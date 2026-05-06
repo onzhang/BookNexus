@@ -60,6 +60,8 @@ class BorrowServiceTest {
         testBook.setId(BOOK_ID);
         testBook.setTitle("Test Book");
         testBook.setStatus(BookStatus.AVAILABLE.name());
+        testBook.setStock(1);
+        testBook.setAvailableStock(1);
 
         testUser = new User();
         testUser.setId(USER_ID);

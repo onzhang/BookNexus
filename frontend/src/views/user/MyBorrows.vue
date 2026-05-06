@@ -31,7 +31,6 @@
           stripe
           border
           style="width: 100%"
-          v-loading="loading"
         >
           <el-table-column label="封面" width="80">
             <template #default="{ row }">
@@ -43,8 +42,8 @@
           </el-table-column>
           <el-table-column prop="bookTitle" label="书名" min-width="160" />
           <el-table-column prop="bookAuthor" label="作者" width="120" />
-          <el-table-column prop="borrowedAt" label="借阅日期" width="180" />
-          <el-table-column prop="dueAt" label="应还日期" width="180" />
+          <el-table-column prop="borrowDate" label="借阅日期" width="180" />
+          <el-table-column prop="dueDate" label="应还日期" width="180" />
           <el-table-column label="状态" width="100">
             <template #default="{ row }">
               <el-tag :type="statusTagType(row.status)" size="small">
@@ -119,7 +118,8 @@ const statusTextMap: Record<string, string> = {
   PENDING: '待确认',
   BORROWED: '借阅中',
   RENEWED: '已续借',
-  RETURNED: '已归还'
+  RETURNED: '已归还',
+  OVERDUE: '已逾期'
 }
 
 /** 借阅状态 → Element Plus Tag 类型映射 */
@@ -127,7 +127,8 @@ const statusTagMap: Record<string, string> = {
   PENDING: 'warning',
   BORROWED: '',
   RENEWED: 'success',
-  RETURNED: 'info'
+  RETURNED: 'info',
+  OVERDUE: 'danger'
 }
 
 /**

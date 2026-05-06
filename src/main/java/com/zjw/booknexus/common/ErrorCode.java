@@ -52,6 +52,38 @@ public final class ErrorCode {
     /** 续借次数超限（仅限 1 次） */
     public static final String RENEW_LIMIT_EXCEEDED = "RENEW_LIMIT_EXCEEDED";
 
+    /** 分类不存在 */
+    public static final String CATEGORY_NOT_FOUND = "CATEGORY_NOT_FOUND";
+    /** 分类名称已存在 */
+    public static final String DUPLICATE_CATEGORY_NAME = "DUPLICATE_CATEGORY_NAME";
+    /** 不能将分类的父分类设为其自身 */
+    public static final String SELF_PARENT = "SELF_PARENT";
+    /** 该分类下存在子分类，无法删除 */
+    public static final String HAS_CHILDREN = "HAS_CHILDREN";
+
+    /** 书架不存在 */
+    public static final String BOOKSHELF_NOT_FOUND = "BOOKSHELF_NOT_FOUND";
+    /** 书架名称已存在 */
+    public static final String DUPLICATE_BOOKSHELF_NAME = "DUPLICATE_BOOKSHELF_NAME";
+
+    /** 已收藏该书 */
+    public static final String ALREADY_FAVORITED = "ALREADY_FAVORITED";
+    /** 收藏记录不存在 */
+    public static final String FAVORITE_NOT_FOUND = "FAVORITE_NOT_FOUND";
+    /** 已订阅该书 */
+    public static final String ALREADY_SUBSCRIBED = "ALREADY_SUBSCRIBED";
+    /** 订阅记录不存在 */
+    public static final String SUBSCRIPTION_NOT_FOUND = "SUBSCRIPTION_NOT_FOUND";
+
+    /** 公告不存在 */
+    public static final String ANNOUNCEMENT_NOT_FOUND = "ANNOUNCEMENT_NOT_FOUND";
+
+    /** 通知不存在 */
+    public static final String NOTIFICATION_NOT_FOUND = "NOTIFICATION_NOT_FOUND";
+
+    /** 留言不存在 */
+    public static final String MESSAGE_NOT_FOUND = "MESSAGE_NOT_FOUND";
+
     /** 无操作权限 */
     public static final String FORBIDDEN = "FORBIDDEN";
     /** 未登录或 Token 缺失 */

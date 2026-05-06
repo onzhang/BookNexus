@@ -51,3 +51,6 @@ nul
 .env
 .env.local
 .env.*.local
+
+### sisyphus ###
+.sisyphus/

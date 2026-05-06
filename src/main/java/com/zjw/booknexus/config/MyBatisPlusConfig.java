@@ -14,7 +14,9 @@ import com.baomidou.mybatisplus.extension.plugins.inner.OptimisticLockerInnerInt
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
 
 /**
  * MyBatis-Plus 配置
@@ -28,7 +30,10 @@ import org.springframework.context.annotation.Configuration;
  * @since 2026-04-30
  */
 @Configuration
-@MapperScan("com.zjw.booknexus.mapper")
+@MapperScan(basePackages = "com.zjw.booknexus.mapper",
+        excludeFilters = @ComponentScan.Filter(
+                type = FilterType.REGEX,
+                pattern = ".*es\\..*"))
 public class MyBatisPlusConfig {
 
     /**

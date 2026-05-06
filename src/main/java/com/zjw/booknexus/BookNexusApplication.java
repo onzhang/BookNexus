@@ -11,7 +11,9 @@ package com.zjw.booknexus;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.context.annotation.FilterType;
 
 /**
  * BookNexus 图书管理系统 — 应用主入口
@@ -19,7 +21,7 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
  * <ul>
  *   <li>Spring Boot 自动配置 — 根据 classpath 依赖自动装配各组件</li>
  *   <li>AOP 代理 — {@code @EnableAspectJAutoProxy} 启用 AspectJ 注解支持</li>
- *   <li>Mapper 扫描 — {@code @MapperScan} 扫描 MyBatis-Plus Mapper 接口</li>
+ *   <li>Mapper 扫描 — {@code @MapperScan} 扫描 MyBatis-Plus Mapper 接口（排除 ES Repository）</li>
  * </ul>
  *
  * <p>构建命令：</p>
@@ -34,7 +36,10 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
  */
 @SpringBootApplication
 @EnableAspectJAutoProxy
-@MapperScan("com.zjw.booknexus.mapper")
+@MapperScan(basePackages = "com.zjw.booknexus.mapper",
+        excludeFilters = @ComponentScan.Filter(
+                type = FilterType.REGEX,
+                pattern = ".*es\\..*"))
 public class BookNexusApplication {
 
     /**

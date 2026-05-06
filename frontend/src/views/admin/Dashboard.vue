@@ -74,8 +74,8 @@
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="username" label="借阅人" width="120" />
         <el-table-column prop="bookTitle" label="书名" min-width="180" />
-        <el-table-column prop="borrowedAt" label="借阅日期" width="180" />
-        <el-table-column prop="dueAt" label="到期日期" width="180" />
+        <el-table-column prop="borrowDate" label="借阅日期" width="180" />
+        <el-table-column prop="dueDate" label="到期日期" width="180" />
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="statusTagType(row.status)">
@@ -89,6 +89,8 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <el-empty v-if="!loading && borrowList.length === 0" description="暂无借阅记录" />
     </el-card>
   </div>
 </template>

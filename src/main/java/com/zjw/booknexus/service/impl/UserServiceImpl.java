@@ -10,6 +10,8 @@ import com.zjw.booknexus.dto.UserUpdateReq;
 import com.zjw.booknexus.entity.User;
 import com.zjw.booknexus.exception.BusinessException;
 import com.zjw.booknexus.mapper.UserMapper;
+import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.zjw.booknexus.sentinel.SentinelRuleInitializer;
 import com.zjw.booknexus.service.UserService;
 import com.zjw.booknexus.utils.UserContext;
 import com.zjw.booknexus.vo.UserVO;
@@ -17,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
+import cn.hutool.core.util.StrUtil;
 
 import java.util.List;
 
@@ -50,10 +52,11 @@ public class UserServiceImpl implements UserService {
      * @return 用户信息分页结果
      */
     @Override
+    @SentinelResource(value = "userPage", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
     public PageResult<UserVO> page(UserPageReq req) {
         // 1. 构建动态查询条件：关键词同时匹配用户名和邮箱
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.hasText(req.getKeyword())) {
+        if (StrUtil.isNotBlank(req.getKeyword())) {
             wrapper.and(w -> w
                     .like(User::getUsername, req.getKeyword())
                     .or()
@@ -110,7 +113,7 @@ public class UserServiceImpl implements UserService {
      *         当管理员尝试禁用自身时抛出 403 异常
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void update(Long id, UserUpdateReq req) {
         // 1. 查询待更新用户是否存在
         User user = userMapper.selectById(id);
@@ -152,7 +155,8 @@ public class UserServiceImpl implements UserService {
      *         当管理员尝试禁用自身时抛出 403 异常
      */
     @Override
-    @Transactional
+    @SentinelResource(value = "updateStatus", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
+    @Transactional(rollbackFor = Exception.class)
     public void updateStatus(Long id, String status) {
         // 1. 查询用户是否存在
         User user = userMapper.selectById(id);

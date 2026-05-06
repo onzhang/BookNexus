@@ -41,7 +41,7 @@ export const useUserStore = defineStore('user', () => {
     const res = await request.post<LoginResponse>(PublicAPI.AUTH_LOGIN.path, data)
     const { accessToken, refreshToken, userId, username, role } = res.data.data
     token.value = accessToken
-    userInfo.value = { id: userId, username, role, status: 1, createdAt: '', updatedAt: '' } as User
+    userInfo.value = { id: userId, username, role, status: 'ENABLED', createdAt: '', updatedAt: '' } as User
     localStorage.setItem(TOKEN_KEY, token.value)
     localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken)
     localStorage.setItem(USER_KEY, JSON.stringify(userInfo.value))
@@ -55,7 +55,7 @@ export const useUserStore = defineStore('user', () => {
     const res = await request.post<LoginResponse>(PublicAPI.AUTH_REGISTER.path, data)
     const { accessToken, refreshToken, userId, username, role } = res.data.data
     token.value = accessToken
-    userInfo.value = { id: userId, username, role, status: 1, createdAt: '', updatedAt: '' } as User
+    userInfo.value = { id: userId, username, role, status: 'ENABLED', createdAt: '', updatedAt: '' } as User
     localStorage.setItem(TOKEN_KEY, token.value)
     localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken)
     localStorage.setItem(USER_KEY, JSON.stringify(userInfo.value))

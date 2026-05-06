@@ -49,8 +49,8 @@
             {{ row.bookTitle || '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="borrowedAt" label="借阅日期" width="180" />
-        <el-table-column prop="dueAt" label="到期日期" width="180" />
+        <el-table-column prop="borrowDate" label="借阅日期" width="180" />
+        <el-table-column prop="dueDate" label="到期日期" width="180" />
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="statusTagType(row.status)">
@@ -123,7 +123,9 @@ const statusTextMap: Record<string, string> = {
   BORROWED: '借出中',
   RENEWED: '已续借',
   RETURNED: '已归还',
-  OVERDUE: '逾期'
+  OVERDUE: '逾期',
+  APPROVED: '已通过',
+  REJECTED: '已拒绝'
 }
 
 /** 借阅状态 → Element Plus Tag 类型映射 */
@@ -132,7 +134,9 @@ const statusTagMap: Record<string, string> = {
   BORROWED: '',
   RENEWED: 'success',
   RETURNED: 'info',
-  OVERDUE: 'danger'
+  OVERDUE: 'danger',
+  APPROVED: 'success',
+  REJECTED: 'info'
 }
 
 /**
@@ -219,6 +223,7 @@ onMounted(() => {
     display: flex;
     align-items: center;
     gap: 12px;
+    flex-wrap: wrap;
   }
 
   .table-card {
