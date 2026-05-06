@@ -32,7 +32,19 @@ export const PublicAPI = {
   /** 图书分页搜索 */
   BOOK_PAGE: { path: '/v1/public/books', method: HttpMethod.GET },
   /** 图书详情 */
-  BOOK_DETAIL: (id: number | string) => ({ path: `/v1/public/books/${id}`, method: HttpMethod.GET })
+  BOOK_DETAIL: (id: number | string) => ({ path: `/v1/public/books/${id}`, method: HttpMethod.GET }),
+  /** 书架列表（公开） */
+  BOOKSHELF_LIST: { path: '/v1/public/bookshelves', method: HttpMethod.GET },
+  /** 分类列表（公开） */
+  CATEGORY_LIST: { path: '/v1/public/categories', method: HttpMethod.GET },
+  /** 分类树形结构（公开） */
+  CATEGORY_TREE: { path: '/v1/public/categories/tree', method: HttpMethod.GET },
+
+  // -- 公告（公开） --
+  /** 公告分页查询 */
+  ANNOUNCEMENT_PAGE: { path: '/v1/public/announcements', method: HttpMethod.GET },
+  /** 公告详情 */
+  ANNOUNCEMENT_DETAIL: (id: number | string) => ({ path: `/v1/public/announcements/${id}`, method: HttpMethod.GET })
 } as const
 
 /** ==================== 用户端接口（需登录） ==================== */
@@ -47,7 +59,39 @@ export const UserAPI = {
   /** 续借图书 */
   BORROW_RENEW: (id: number | string) => ({ path: `/v1/user/borrows/${id}/renew`, method: HttpMethod.PUT }),
   /** 我的借阅记录 */
-  BORROW_MY_PAGE: { path: '/v1/user/borrows', method: HttpMethod.GET }
+  BORROW_MY_PAGE: { path: '/v1/user/borrows', method: HttpMethod.GET },
+
+  // -- 收藏管理 --
+  /** 收藏图书 */
+  FAVORITE_CREATE: { path: '/v1/user/favorites', method: HttpMethod.POST },
+  /** 取消收藏 */
+  FAVORITE_DELETE: (bookId: number | string) => ({ path: `/v1/user/favorites/${bookId}`, method: HttpMethod.DELETE }),
+  /** 我的收藏列表 */
+  FAVORITE_MY_PAGE: { path: '/v1/user/favorites', method: HttpMethod.GET },
+  /** 检查是否已收藏 */
+  FAVORITE_CHECK: (bookId: number | string) => ({ path: `/v1/user/favorites/check/${bookId}`, method: HttpMethod.GET }),
+
+  // -- 订阅管理 --
+  /** 订阅图书 */
+  SUBSCRIPTION_CREATE: { path: '/v1/user/subscriptions', method: HttpMethod.POST },
+  /** 取消订阅 */
+  SUBSCRIPTION_DELETE: (bookId: number | string) => ({ path: `/v1/user/subscriptions/${bookId}`, method: HttpMethod.DELETE }),
+  /** 我的订阅列表 */
+  SUBSCRIPTION_MY_PAGE: { path: '/v1/user/subscriptions', method: HttpMethod.GET },
+  /** 检查是否已订阅 */
+  SUBSCRIPTION_CHECK: (bookId: number | string) => ({ path: `/v1/user/subscriptions/check/${bookId}`, method: HttpMethod.GET }),
+
+  // -- 通知管理 --
+  /** 我的通知列表 */
+  NOTIFICATION_PAGE: { path: '/v1/user/notifications', method: HttpMethod.GET },
+  /** 标记通知已读 */
+  NOTIFICATION_READ: (id: number | string) => ({ path: `/v1/user/notifications/${id}/read`, method: HttpMethod.PUT }),
+
+  // -- 留言管理 --
+  /** 提交留言 */
+  MESSAGE_CREATE: { path: '/v1/user/messages', method: HttpMethod.POST },
+  /** 我的留言列表 */
+  MESSAGE_MY_PAGE: { path: '/v1/user/messages', method: HttpMethod.GET }
 } as const
 
 /** ==================== 管理端接口（需 ADMIN 角色） ==================== */
@@ -77,5 +121,47 @@ export const AdminAPI = {
   /** 借阅记录分页查询 */
   BORROW_PAGE: { path: '/v1/admin/borrows', method: HttpMethod.GET },
   /** 强制归还 */
-  BORROW_RETURN: (id: number | string) => ({ path: `/v1/admin/borrows/${id}/return`, method: HttpMethod.PUT })
+  BORROW_RETURN: (id: number | string) => ({ path: `/v1/admin/borrows/${id}/return`, method: HttpMethod.PUT }),
+
+  // -- 书架管理 --
+  /** 书架分页查询 */
+  BOOKSHELF_PAGE: { path: '/v1/admin/bookshelves', method: HttpMethod.GET },
+  /** 书架列表（全部） */
+  BOOKSHELF_ALL: { path: '/v1/admin/bookshelves/all', method: HttpMethod.GET },
+  /** 新增书架 */
+  BOOKSHELF_CREATE: { path: '/v1/admin/bookshelves', method: HttpMethod.POST },
+  /** 编辑书架 */
+  BOOKSHELF_UPDATE: (id: number | string) => ({ path: `/v1/admin/bookshelves/${id}`, method: HttpMethod.PUT }),
+  /** 删除书架 */
+  BOOKSHELF_DELETE: (id: number | string) => ({ path: `/v1/admin/bookshelves/${id}`, method: HttpMethod.DELETE }),
+
+  // -- 分类管理 --
+  /** 分类分页查询 */
+  CATEGORY_PAGE: { path: '/v1/admin/categories', method: HttpMethod.GET },
+  /** 分类列表（全部） */
+  CATEGORY_ALL: { path: '/v1/admin/categories/all', method: HttpMethod.GET },
+  /** 分类树形结构 */
+  CATEGORY_TREE_ADMIN: { path: '/v1/admin/categories/tree', method: HttpMethod.GET },
+  /** 新增分类 */
+  CATEGORY_CREATE: { path: '/v1/admin/categories', method: HttpMethod.POST },
+  /** 编辑分类 */
+  CATEGORY_UPDATE: (id: number | string) => ({ path: `/v1/admin/categories/${id}`, method: HttpMethod.PUT }),
+  /** 删除分类 */
+  CATEGORY_DELETE: (id: number | string) => ({ path: `/v1/admin/categories/${id}`, method: HttpMethod.DELETE }),
+
+  // -- 公告管理 --
+  /** 公告分页查询 */
+  ANNOUNCEMENT_PAGE: { path: '/v1/admin/announcements', method: HttpMethod.GET },
+  /** 新增公告 */
+  ANNOUNCEMENT_CREATE: { path: '/v1/admin/announcements', method: HttpMethod.POST },
+  /** 编辑公告 */
+  ANNOUNCEMENT_UPDATE: (id: number | string) => ({ path: `/v1/admin/announcements/${id}`, method: HttpMethod.PUT }),
+  /** 删除公告 */
+  ANNOUNCEMENT_DELETE: (id: number | string) => ({ path: `/v1/admin/announcements/${id}`, method: HttpMethod.DELETE }),
+
+  // -- 留言管理 --
+  /** 留言分页查询（全部） */
+  MESSAGE_PAGE: { path: '/v1/admin/messages', method: HttpMethod.GET },
+  /** 回复留言 */
+  MESSAGE_REPLY: (id: number | string) => ({ path: `/v1/admin/messages/${id}/reply`, method: HttpMethod.PUT })
 } as const

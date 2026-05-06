@@ -19,10 +19,14 @@ import com.zjw.booknexus.mapper.BookCategoryRelMapper;
 import com.zjw.booknexus.mapper.BookMapper;
 import com.zjw.booknexus.mapper.BookshelfMapper;
 import com.zjw.booknexus.mapper.CategoryMapper;
+import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.zjw.booknexus.sentinel.SentinelRuleInitializer;
 import com.zjw.booknexus.service.BookService;
 import com.zjw.booknexus.vo.BookVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,6 +66,7 @@ public class BookServiceImpl implements BookService {
      * @return 图书分页结果，每个元素包含完整的分类和书架信息
      */
     @Override
+    @SentinelResource(value = "bookPage", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
     public PageResult<BookVO> page(BookPageReq req) {
         // 1. 构建动态查询条件：支持关键词、状态、书架 ID 三种筛选维度
         LambdaQueryWrapper<Book> wrapper = new LambdaQueryWrapper<>();
@@ -107,6 +112,8 @@ public class BookServiceImpl implements BookService {
      * @throws BusinessException 当图书不存在时抛出 404 异常
      */
     @Override
+    @SentinelResource(value = "bookGetById", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
+    @Cacheable(value = "book", key = "#id")
     public BookVO getById(Long id) {
         // 1. 根据主键查询图书，不存在则抛出 404 异常
         Book book = bookMapper.selectById(id);
@@ -131,6 +138,7 @@ public class BookServiceImpl implements BookService {
      * @throws BusinessException 当 ISBN 已存在时抛出 409 异常
      */
     @Override
+    @SentinelResource(value = "bookCreate", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
     @Transactional
     public BookVO create(BookCreateReq req) {
         // 1. 校验 ISBN 唯一性：防止录入已存在的重复图书
@@ -170,6 +178,8 @@ public class BookServiceImpl implements BookService {
      *         当 ISBN 与其他图书重复时抛出 409 异常
      */
     @Override
+    @SentinelResource(value = "bookUpdate", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
+    @CacheEvict(value = "book", key = "#id")
     @Transactional
     public BookVO update(Long id, BookUpdateReq req) {
         // 1. 查询待更新图书是否存在
@@ -232,6 +242,8 @@ public class BookServiceImpl implements BookService {
      * @throws BusinessException 当图书不存在时抛出 404 异常
      */
     @Override
+    @SentinelResource(value = "bookDelete", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
+    @CacheEvict(value = "book", key = "#id")
     @Transactional
     public void delete(Long id) {
         // 1. 校验图书是否存在，不存在则直接抛出 404

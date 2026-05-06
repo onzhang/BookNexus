@@ -10,6 +10,8 @@ import com.zjw.booknexus.dto.UserUpdateReq;
 import com.zjw.booknexus.entity.User;
 import com.zjw.booknexus.exception.BusinessException;
 import com.zjw.booknexus.mapper.UserMapper;
+import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.zjw.booknexus.sentinel.SentinelRuleInitializer;
 import com.zjw.booknexus.service.UserService;
 import com.zjw.booknexus.utils.UserContext;
 import com.zjw.booknexus.vo.UserVO;
@@ -50,6 +52,7 @@ public class UserServiceImpl implements UserService {
      * @return 用户信息分页结果
      */
     @Override
+    @SentinelResource(value = "userPage", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
     public PageResult<UserVO> page(UserPageReq req) {
         // 1. 构建动态查询条件：关键词同时匹配用户名和邮箱
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
@@ -152,6 +155,7 @@ public class UserServiceImpl implements UserService {
      *         当管理员尝试禁用自身时抛出 403 异常
      */
     @Override
+    @SentinelResource(value = "updateStatus", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
     @Transactional
     public void updateStatus(Long id, String status) {
         // 1. 查询用户是否存在

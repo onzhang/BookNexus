@@ -2,6 +2,7 @@
  * Copyright (c) 2026 BookNexus. All rights reserved.
  *
  * Sentinel 限流熔断配置：开启 @SentinelResource 注解支持
+ * 并注册全局限流与降级规则
  *
  * @author 张俊文
  * @since 2026-04-29
@@ -15,11 +16,11 @@ import org.springframework.context.annotation.Configuration;
 /**
  * Sentinel 限流熔断配置
  * <p>注册 Sentinel 注解 AOP 切面，启用 {@code @SentinelResource} 注解支持。
- * 可在 Service 方法上定义限流、熔断、降级规则，通过控制台动态调整流量控制策略。</p>
+ * 限流与降级规则由 {@link com.zjw.booknexus.sentinel.SentinelRuleInitializer} 在应用启动时自动初始化。</p>
  *
  * <p><b>使用示例：</b></p>
  * <pre>{@code
- * @SentinelResource(value = "borrowBook", fallback = "borrowFallback")
+ * @SentinelResource(value = "borrowBook", fallback = "borrowFallback", fallbackClass = SentinelRuleInitializer.class)
  * public Result borrowBook(BorrowReq req) { ... }
  * }</pre>
  *

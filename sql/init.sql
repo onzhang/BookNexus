@@ -232,6 +232,19 @@ CREATE TABLE `message` (
 
 
 -- ============================================================
+-- 性能优化索引（基于业务查询模式补充）
+-- ============================================================
+
+-- book 表：按创建时间倒序分页查询高频出现，补充创建时间索引
+CREATE INDEX `idx_book_created_at` ON `book` (`created_at`) USING BTREE;
+
+-- borrow_record 表：按创建时间倒序排列借阅记录，补充创建时间索引
+CREATE INDEX `idx_borrow_created_at` ON `borrow_record` (`created_at`) USING BTREE;
+
+-- borrow_record 表：图书借阅统计场景（某本书被借阅次数）
+CREATE INDEX `idx_borrow_book_status` ON `borrow_record` (`book_id`, `status`) USING BTREE;
+
+-- ============================================================
 -- 种子数据
 -- ============================================================
 

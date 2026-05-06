@@ -77,6 +77,25 @@
               <el-tag v-else-if="book.status === 'BORROWED'" type="warning" size="large">
                 已借出
               </el-tag>
+              <el-button
+                :type="isFavorited ? 'danger' : 'default'"
+                size="large"
+                :loading="favoriting"
+                @click="handleFavorite"
+              >
+                <el-icon><Star /></el-icon>
+                {{ isFavorited ? '取消收藏' : '收藏' }}
+              </el-button>
+              <el-button
+                v-if="book.status === 'BORROWED'"
+                :type="isSubscribed ? 'info' : 'warning'"
+                size="large"
+                :loading="subscribing"
+                @click="handleSubscribe"
+              >
+                <el-icon><Bell /></el-icon>
+                {{ isSubscribed ? '取消订阅' : '订阅归还通知' }}
+              </el-button>
             </div>
           </div>
         </div>
@@ -91,7 +110,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Picture } from '@element-plus/icons-vue'
+import { ArrowLeft, Picture, Star, Bell } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import api from '@/api'
 import { PublicAPI, UserAPI } from '@/api/endpoints'
@@ -106,6 +125,14 @@ const book = ref<BookVO | null>(null)
 const loading = ref(false)
 /** 借阅按钮加载状态 */
 const borrowing = ref(false)
+/** 是否已收藏 */
+const isFavorited = ref(false)
+/** 收藏按钮加载状态 */
+const favoriting = ref(false)
+/** 是否已订阅 */
+const isSubscribed = ref(false)
+/** 订阅按钮加载状态 */
+const subscribing = ref(false)
 
 /** 书籍状态 → 中文文本映射 */
 const statusTextMap: Record<string, string> = {
@@ -152,10 +179,68 @@ async function fetchBook() {
   try {
     const res = await api.get<BookVO>(PublicAPI.BOOK_DETAIL(id).path)
     book.value = res.data.data
+    // 获取书籍详情后，并行检查收藏和订阅状态
+    checkStatus(Number(id))
   } catch {
     book.value = null
   } finally {
     loading.value = false
+  }
+}
+
+/** 检查收藏和订阅状态 */
+async function checkStatus(bookId: number) {
+  try {
+    const [favRes, subRes] = await Promise.all([
+      api.get<boolean>(UserAPI.FAVORITE_CHECK(bookId).path),
+      api.get<boolean>(UserAPI.SUBSCRIPTION_CHECK(bookId).path)
+    ])
+    isFavorited.value = favRes.data.data ?? false
+    isSubscribed.value = subRes.data.data ?? false
+  } catch {
+    // 静默失败，按钮保持默认状态
+  }
+}
+
+/** 收藏 / 取消收藏 */
+async function handleFavorite() {
+  if (!book.value) return
+  favoriting.value = true
+  try {
+    if (isFavorited.value) {
+      await api.delete(UserAPI.FAVORITE_DELETE(book.value.id).path)
+      ElMessage.success('已取消收藏')
+      isFavorited.value = false
+    } else {
+      await api.post(UserAPI.FAVORITE_CREATE.path, { bookId: book.value.id })
+      ElMessage.success('收藏成功')
+      isFavorited.value = true
+    }
+  } catch {
+    // Error already shown by interceptor
+  } finally {
+    favoriting.value = false
+  }
+}
+
+/** 订阅 / 取消订阅 */
+async function handleSubscribe() {
+  if (!book.value) return
+  subscribing.value = true
+  try {
+    if (isSubscribed.value) {
+      await api.delete(UserAPI.SUBSCRIPTION_DELETE(book.value.id).path)
+      ElMessage.success('已取消订阅')
+      isSubscribed.value = false
+    } else {
+      await api.post(UserAPI.SUBSCRIPTION_CREATE.path, { bookId: book.value.id })
+      ElMessage.success('订阅成功，图书归还后将收到通知')
+      isSubscribed.value = true
+    }
+  } catch {
+    // Error already shown by interceptor
+  } finally {
+    subscribing.value = false
   }
 }
 

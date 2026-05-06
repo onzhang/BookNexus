@@ -61,6 +61,24 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '书籍详情' }
       },
       {
+        path: 'favorites',
+        name: 'MyFavorites',
+        component: () => import('@/views/user/Favorites.vue'),
+        meta: { title: '我的收藏' }
+      },
+      {
+        path: 'notifications',
+        name: 'MyNotifications',
+        component: () => import('@/views/user/Notifications.vue'),
+        meta: { title: '我的通知' }
+      },
+      {
+        path: 'messages',
+        name: 'MyMessages',
+        component: () => import('@/views/user/Messages.vue'),
+        meta: { title: '留言建议' }
+      },
+      {
         path: 'profile',
         name: 'Profile',
         component: () => import('@/views/user/Profile.vue'),
@@ -97,6 +115,24 @@ const routes: RouteRecordRaw[] = [
         name: 'AdminBorrows',
         component: () => import('@/views/admin/Borrows.vue'),
         meta: { title: '借阅管理' }
+      },
+      {
+        path: 'bookshelves',
+        name: 'AdminBookshelves',
+        component: () => import('@/views/admin/Bookshelves.vue'),
+        meta: { title: '书架管理' }
+      },
+      {
+        path: 'announcements',
+        name: 'AdminAnnouncements',
+        component: () => import('@/views/admin/Announcements.vue'),
+        meta: { title: '公告管理' }
+      },
+      {
+        path: 'messages',
+        name: 'AdminMessages',
+        component: () => import('@/views/admin/Messages.vue'),
+        meta: { title: '留言管理' }
       }
     ]
   },

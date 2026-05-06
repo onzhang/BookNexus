@@ -51,3 +51,9 @@ nul
 .env
 .env.local
 .env.*.local
+
+### sisyphus ###
+sisyphus/
+.sisyphus/run-continuation/ses_204899264ffeONeHWz7PMid1pC.json
+.sisyphus/run-continuation/ses_20480c7faffeq1LVpIfxYb8EF8.json
+.sisyphus/ralph-loop.local.md

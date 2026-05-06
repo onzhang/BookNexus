@@ -29,6 +29,18 @@
           <el-icon><Document /></el-icon>
           <template #title>我的借阅</template>
         </el-menu-item>
+        <el-menu-item index="/user/favorites">
+          <el-icon><Star /></el-icon>
+          <template #title>我的收藏</template>
+        </el-menu-item>
+        <el-menu-item index="/user/notifications">
+          <el-icon><Bell /></el-icon>
+          <template #title>我的通知</template>
+        </el-menu-item>
+        <el-menu-item index="/user/messages">
+          <el-icon><ChatDotRound /></el-icon>
+          <template #title>留言建议</template>
+        </el-menu-item>
         <el-menu-item index="/user/profile">
           <el-icon><User /></el-icon>
           <template #title>个人中心</template>
@@ -57,7 +69,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { HomeFilled, Document, User } from '@element-plus/icons-vue'
+import { HomeFilled, Document, Star, User, Bell, ChatDotRound } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { ElMessageBox } from 'element-plus'
 

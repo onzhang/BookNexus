@@ -36,9 +36,25 @@
           <el-icon><Reading /></el-icon>
           <template #title>书籍管理</template>
         </el-menu-item>
+        <el-menu-item index="/admin/bookshelves">
+          <el-icon><Collection /></el-icon>
+          <template #title>书架管理</template>
+        </el-menu-item>
+        <el-menu-item index="/admin/categories">
+          <el-icon><FolderOpened /></el-icon>
+          <template #title>分类管理</template>
+        </el-menu-item>
         <el-menu-item index="/admin/borrows">
           <el-icon><Document /></el-icon>
           <template #title>借阅管理</template>
+        </el-menu-item>
+        <el-menu-item index="/admin/announcements">
+          <el-icon><Bell /></el-icon>
+          <template #title>公告管理</template>
+        </el-menu-item>
+        <el-menu-item index="/admin/messages">
+          <el-icon><ChatDotRound /></el-icon>
+          <template #title>留言管理</template>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -77,7 +93,11 @@ import {
   Reading,
   Document,
   Expand,
-  Fold
+  Fold,
+  Collection,
+  FolderOpened,
+  Bell,
+  ChatDotRound
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { ElMessageBox } from 'element-plus'

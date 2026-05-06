@@ -103,9 +103,6 @@
         <el-form-item label="库存" prop="stock">
           <el-input-number v-model="form.stock" :min="0" />
         </el-form-item>
-        <el-form-item label="价格" prop="price">
-          <el-input-number v-model="form.price" :min="0" :precision="2" />
-        </el-form-item>
         <el-form-item label="简介">
           <el-input v-model="form.description" type="textarea" :rows="3" />
         </el-form-item>
@@ -166,7 +163,6 @@ const initialForm: BookForm = {
   publisher: '',
   categoryId: undefined,
   stock: 1,
-  price: 0,
   description: '',
   coverUrl: ''
 }
@@ -179,8 +175,7 @@ const rules: FormRules = {
   title: [{ required: true, message: '请输入书名', trigger: 'blur' }],
   author: [{ required: true, message: '请输入作者', trigger: 'blur' }],
   isbn: [{ required: true, message: '请输入ISBN', trigger: 'blur' }],
-  stock: [{ required: true, message: '请输入库存', trigger: 'blur' }],
-  price: [{ required: true, message: '请输入价格', trigger: 'blur' }]
+  stock: [{ required: true, message: '请输入库存', trigger: 'blur' }]
 }
 
 /** 书籍状态 → 中文文本映射 */
@@ -269,7 +264,6 @@ function openEditDialog(book: Book) {
   form.publisher = book.publisher || ''
   form.categoryId = book.categoryId
   form.stock = book.stock
-  form.price = book.price
   form.description = book.description || ''
   form.coverUrl = book.coverUrl || ''
   dialogVisible.value = true

@@ -30,11 +30,11 @@ public class BookCreateReq {
 
     /** 作者（必填） */
     @NotBlank(message = "作者不能为空")
-    private String publisher;
+    private String author;
 
     /** 出版社（必填） */
     @NotBlank(message = "出版社不能为空")
-    private String author;
+    private String publisher;
 
     /** 书籍简介 */
     private String description;
