@@ -14,7 +14,7 @@ USE booknexus;
 -- reader01 ~ reader08: 普通用户（ENABLED）
 -- disabled_user: 禁用用户（DISABLED）
 -- ============================================================
-INSERT INTO `user` (`id`, `username`, `password`, `email`, `phone`, `role`, `status`) VALUES
+INSERT IGNORE INTO `user` (`id`, `username`, `password`, `email`, `phone`, `role`, `status`) VALUES
 (2,  'reader01',       '$2b$10$zVbt8GcpDMc4T345twzJz.a5oHkrSBdj7UPaKOvwwtDMIfuc080ZK', 'reader01@booknexus.com',       NULL, 'USER', 'ENABLED'),
 (3,  'reader02',       '$2b$10$zVbt8GcpDMc4T345twzJz.a5oHkrSBdj7UPaKOvwwtDMIfuc080ZK', 'reader02@booknexus.com',       NULL, 'USER', 'ENABLED'),
 (4,  'reader03',       '$2b$10$zVbt8GcpDMc4T345twzJz.a5oHkrSBdj7UPaKOvwwtDMIfuc080ZK', 'reader03@booknexus.com',       NULL, 'USER', 'ENABLED'),
@@ -31,7 +31,7 @@ INSERT INTO `user` (`id`, `username`, `password`, `email`, `phone`, `role`, `sta
 -- 热门书籍（stock=5）：活着、三体、Clean Code、Design Patterns、1984
 -- 特殊状态：Sapiens(DAMAGED)、Outliers(LOST)
 -- ============================================================
-INSERT INTO `book` (`id`, `title`, `author`, `isbn`, `publisher`, `publish_date`, `description`, `cover_url`, `stock`, `available_stock`, `status`, `bookshelf_id`) VALUES
+INSERT IGNORE INTO `book` (`id`, `title`, `author`, `isbn`, `publisher`, `publish_date`, `description`, `cover_url`, `stock`, `available_stock`, `status`, `bookshelf_id`) VALUES
 -- 书架 1（ID 1-5）
 (1,  '活着',            '余华',                    '978-7-02-013281-8',  '作家出版社',           '2012-01-01', '讲述了一个普通人在历史洪流中历经苦难、顽强生存的故事，深刻展现了生命的韧性与意义。',           'https://placehold.co/400x600/EEE/999?text=活着',            5, 5, 'AVAILABLE', 1),
 (2,  '百年孤独',        '加西亚·马尔克斯',          '978-7-5442-5399-4',  '南海出版公司',         '2011-01-01', '魔幻现实主义经典之作，讲述了布恩迪亚家族七代人的兴衰传奇。',                                   'https://placehold.co/400x600/EEE/999?text=百年孤独',        1, 1, 'AVAILABLE', 1),
@@ -97,7 +97,7 @@ INSERT INTO `book` (`id`, `title`, `author`, `isbn`, `publisher`, `publish_date`
 -- 3. 书籍-类别关联数据（book_category_rel）
 -- 每本书 1-2 个类别，热门书籍（stock=5）关联 2 个类别
 -- ============================================================
-INSERT INTO `book_category_rel` (`book_id`, `category_id`) VALUES
+INSERT IGNORE INTO `book_category_rel` (`book_id`, `category_id`) VALUES
 -- 热门书籍：每本 2 个类别
 (1, 1),   -- 活着 → 文学
 (1, 10),  -- 活着 → 其他
@@ -176,7 +176,7 @@ INSERT INTO `book_category_rel` (`book_id`, `category_id`) VALUES
 -- reader01(ID=2) 借满 5 本上限（BORROWED/RENEWED）
 -- 归还可产生逾期罚款 0.50 / 目前在借逾期罚款累计至 1.50
 -- ============================================================
-INSERT INTO `borrow_record` (`user_id`, `book_id`, `borrow_date`, `due_date`, `return_date`, `status`, `reject_reason`, `renew_count`, `fine_amount`) VALUES
+INSERT IGNORE INTO `borrow_record` (`user_id`, `book_id`, `borrow_date`, `due_date`, `return_date`, `status`, `reject_reason`, `renew_count`, `fine_amount`) VALUES
 -- PENDING（2 条等待审批）
 (2, 3,  DATE_SUB(CURDATE(), INTERVAL 2 DAY),  DATE_SUB(CURDATE(), INTERVAL 2 DAY) + INTERVAL 30 DAY,  NULL, 'PENDING',  NULL, 0, 0.00),
 (3, 21, DATE_SUB(CURDATE(), INTERVAL 1 DAY),  DATE_SUB(CURDATE(), INTERVAL 1 DAY) + INTERVAL 30 DAY,  NULL, 'PENDING',  NULL, 0, 0.00),
@@ -244,7 +244,7 @@ UPDATE `book` SET `available_stock` = 0, `status` = 'BORROWED' WHERE `id` = 10;
 -- 热门书籍（三体/活着/Clean Code/1984/Design Patterns）获得更多收藏
 -- 每个用户 2-3 个收藏，无重复 (user_id, book_id)
 -- ============================================================
-INSERT INTO `favorite` (`user_id`, `book_id`) VALUES
+INSERT IGNORE INTO `favorite` (`user_id`, `book_id`) VALUES
 -- reader01（ID=2）：收藏 3 本热门书
 (2, 6),   -- 三体
 (2, 31),  -- Clean Code
@@ -280,7 +280,7 @@ INSERT INTO `favorite` (`user_id`, `book_id`) VALUES
 -- 含 2 条已取消订阅（is_active=0）
 -- 无重复 (user_id, book_id)
 -- ============================================================
-INSERT INTO `subscription` (`user_id`, `book_id`, `is_active`) VALUES
+INSERT IGNORE INTO `subscription` (`user_id`, `book_id`, `is_active`) VALUES
 -- 活跃订阅（7 条）：等待热门书籍归还
 (4, 2,  1),  -- reader03 订阅 百年孤独（当前 APPROVED）
 (6, 4,  1),  -- reader05 订阅 围城（当前 APPROVED）
@@ -298,7 +298,7 @@ INSERT INTO `subscription` (`user_id`, `book_id`, `is_active`) VALUES
 -- 类型：SYSTEM(5) + OVERDUE(4) + SUBSCRIPTION(4)
 -- 含已读(is_read=1)和未读(is_read=0)混合
 -- ============================================================
-INSERT INTO `notification` (`user_id`, `type`, `title`, `content`, `is_read`) VALUES
+INSERT IGNORE INTO `notification` (`user_id`, `type`, `title`, `content`, `is_read`) VALUES
 -- SYSTEM 通知（5 条）
 (2,  'SYSTEM',      '欢迎使用 BookNexus 图书管理系统',               '尊敬的读者，欢迎加入 BookNexus！您可以浏览馆藏书籍、借阅图书、收藏感兴趣的书籍。如有任何问题，请随时联系我们。',                                                                        1),
 (3,  'SYSTEM',      '系统维护通知',                                 '系统将于本周六凌晨 2:00-4:00 进行例行维护，届时部分功能可能暂时不可用。给您带来的不便敬请谅解。',                                                                                    0),
@@ -320,7 +320,7 @@ INSERT INTO `notification` (`user_id`, `type`, `title`, `content`, `is_read`) VA
 -- 8. 公告数据（5 条，4 条已发布 + 1 条草稿）
 -- 发布者均为管理员（user_id=1）
 -- ============================================================
-INSERT INTO `announcement` (`title`, `content`, `publisher_id`, `is_published`) VALUES
+INSERT IGNORE INTO `announcement` (`title`, `content`, `publisher_id`, `is_published`) VALUES
 ('BookNexus 图书馆正式开馆通知',    '各位读者：BookNexus 图书管理系统已于2026年5月正式上线运行。本馆藏有各类图书50余册，涵盖文学、科学、技术、历史、哲学等多个领域。欢迎各位读者前来借阅！开放时间：周一至周五 9:00-21:00，周末 10:00-18:00。',                                                                                                                                        1, 1),
 ('借阅规则与注意事项',              '借阅规则：1. 每位读者最多可同时借阅5本图书；2. 单次借阅期限为30天；3. 到期前7天内可申请续借1次，续借期限为15天；4. 逾期未还将按0.1元/天收取逾期费用；5. 请爱护图书，如有损坏或遗失需照价赔偿。',                                                                                                                                                  1, 1),
 ('五一假期图书馆开放安排',          '各位读者：根据学校五一假期安排，图书馆将于5月1日至5月3日闭馆，5月4日起恢复正常开放。请各位读者提前安排好借还书时间，避免产生逾期费用。逾期日不计入假期期间。祝大家假期愉快！',                                                                                                        1, 1),
@@ -330,7 +330,7 @@ INSERT INTO `announcement` (`title`, `content`, `publisher_id`, `is_published`) 
 -- ============================================================
 -- 9. 读者留言/建议（7 条，部分有管理员回复）
 -- ============================================================
-INSERT INTO `message` (`user_id`, `content`, `reply`, `reply_at`, `replier_id`) VALUES
+INSERT IGNORE INTO `message` (`user_id`, `content`, `reply`, `reply_at`, `replier_id`) VALUES
 -- 已有管理员回复（4 条）
 (2,  '建议图书馆增加更多计算机和编程相关的书籍，特别是人工智能和机器学习方向的新书。',            '感谢您的建议！我们已经注意到这方面的需求，近期正在采购AI和机器学习方向的书籍，预计下月到馆。', DATE_SUB(CURDATE(), INTERVAL 2 DAY), 1),
 (3,  '图书馆的WiFi信号在二楼阅览区不太稳定，能否检查一下？',                                      '已收到您的反馈，我们已联系网络管理部门，将在本周内进行信号检测和优化。',                     DATE_SUB(CURDATE(), INTERVAL 1 DAY), 1),
@@ -344,7 +344,7 @@ INSERT INTO `message` (`user_id`, `content`, `reply`, `reply_at`, `replier_id`) 
 -- ============================================================
 -- 10. 操作日志（18 条，覆盖多种操作类型和 2 条 FAILURE）
 -- ============================================================
-INSERT INTO `operation_log` (`operator`, `action`, `target_type`, `target_id`, `detail`, `ip`, `result`, `created_at`) VALUES
+INSERT IGNORE INTO `operation_log` (`operator`, `action`, `target_type`, `target_id`, `detail`, `ip`, `result`, `created_at`) VALUES
 -- 书籍操作（5 条）
 ('admin', 'CREATE_BOOK',          'book',         6,   '{"title":"三体","author":"刘慈欣","isbn":"978-7-5366-6163-4"}',                          '192.168.1.100', 'SUCCESS', DATE_SUB(CURDATE(), INTERVAL 30 DAY)),
 ('admin', 'CREATE_BOOK',          'book',         31,  '{"title":"Clean Code","author":"Robert C. Martin"}',                                       '192.168.1.100', 'SUCCESS', DATE_SUB(CURDATE(), INTERVAL 29 DAY)),
