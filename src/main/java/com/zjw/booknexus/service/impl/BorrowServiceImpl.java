@@ -77,7 +77,7 @@ public class BorrowServiceImpl implements BorrowService {
      *         当图书不可借阅、借阅数量超限或已借阅该书时抛出 409 异常
      */
     @Override
-    @SentinelResource(value = "borrow", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
+    @SentinelResource(value = "borrow", fallback = "fallbackObject", fallbackClass = SentinelRuleInitializer.class)
     @Transactional(rollbackFor = Exception.class)
     public BorrowRecordVO borrow(Long userId, BorrowReq req) {
         // 1. 校验图书是否存在，不存在则直接拒绝借阅
@@ -119,12 +119,17 @@ public class BorrowServiceImpl implements BorrowService {
         record.setFineAmount(BigDecimal.ZERO);
         borrowRecordMapper.insert(record);
 
-        // 6. 扣减可用库存，若库存降为 0 则将图书状态更新为 BORROWED
-        book.setAvailableStock(book.getAvailableStock() - 1);
+        // 6. 原子化扣减可用库存，防止并发超借
+        int rows = bookMapper.decrementAvailableStock(req.getBookId());
+        if (rows == 0) {
+            throw new BusinessException(409, ErrorCode.BOOK_NOT_AVAILABLE);
+        }
+        // 扣减成功后重新查询图书状态，若库存降为 0 则更新状态为 BORROWED
+        book = bookMapper.selectById(req.getBookId());
         if (book.getAvailableStock() == 0) {
             book.setStatus(BookStatus.BORROWED.name());
+            bookMapper.updateById(book);
         }
-        bookMapper.updateById(book);
 
         // 7. 查询用户信息并组装视图对象返回
         User user = userMapper.selectById(userId);
@@ -147,7 +152,7 @@ public class BorrowServiceImpl implements BorrowService {
      *         当记录状态不合法时抛出 409 异常
      */
     @Override
-    @SentinelResource(value = "returnBook", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
+    @SentinelResource(value = "returnBook", fallback = "fallbackObject", fallbackClass = SentinelRuleInitializer.class)
     @Transactional(rollbackFor = Exception.class)
     public BorrowRecordVO returnBook(Long userId, Long recordId) {
         // 1. 查询借阅记录：同时按记录 ID 和用户 ID 查询，确保只有记录归属人本人可以归还
@@ -222,13 +227,11 @@ public class BorrowServiceImpl implements BorrowService {
         // 4. 持久化更新借阅记录
         borrowRecordMapper.updateById(record);
 
-        // 5. 恢复可用库存，若库存从 0 恢复到 1 则将图书状态更新为 AVAILABLE
+        // 5. 原子化恢复可用库存，并更新图书状态
+        bookMapper.incrementAvailableStock(record.getBookId());
         Book book = bookMapper.selectById(record.getBookId());
-        if (book != null) {
-            book.setAvailableStock(book.getAvailableStock() + 1);
-            if (book.getAvailableStock() == 1) {
-                book.setStatus(BookStatus.AVAILABLE.name());
-            }
+        if (book != null && book.getAvailableStock() == 1) {
+            book.setStatus(BookStatus.AVAILABLE.name());
             bookMapper.updateById(book);
         }
 
@@ -252,7 +255,7 @@ public class BorrowServiceImpl implements BorrowService {
      *         当状态不合法或续借次数已达上限时抛出 409 异常
      */
     @Override
-    @SentinelResource(value = "renew", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
+    @SentinelResource(value = "renew", fallback = "fallbackObject", fallbackClass = SentinelRuleInitializer.class)
     @Transactional(rollbackFor = Exception.class)
     public BorrowRecordVO renew(Long userId, Long recordId) {
         // 1. 校验借阅记录归属：记录必须属于当前用户
@@ -298,7 +301,7 @@ public class BorrowServiceImpl implements BorrowService {
      * @return 借阅记录分页结果
      */
     @Override
-    @SentinelResource(value = "myBorrows", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
+    @SentinelResource(value = "myBorrows", fallback = "fallbackPageResult", fallbackClass = SentinelRuleInitializer.class)
     public PageResult<BorrowRecordVO> myBorrows(Long userId, BorrowPageReq req) {
         // 1. 构建查询条件：按当前用户 ID 精确过滤，可选按借阅状态进一步筛选
         LambdaQueryWrapper<BorrowRecord> wrapper = new LambdaQueryWrapper<BorrowRecord>()
