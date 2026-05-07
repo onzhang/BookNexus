@@ -66,34 +66,78 @@ public class BookServiceImpl implements BookService {
      * @return 图书分页结果，每个元素包含完整的分类和书架信息
      */
     @Override
-    @SentinelResource(value = "bookPage", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
+    @SentinelResource(value = "bookPage", fallback = "fallbackPageResult", fallbackClass = SentinelRuleInitializer.class)
     public PageResult<BookVO> page(BookPageReq req) {
-        // 1. 构建动态查询条件：支持关键词、状态、书架 ID 三种筛选维度
+        // 1. 构建动态查询条件
         LambdaQueryWrapper<Book> wrapper = new LambdaQueryWrapper<>();
         if (StrUtil.isNotBlank(req.getKeyword())) {
-            // 关键词同时匹配书名、作者、ISBN 三个字段，任一匹配即命中
             wrapper.and(w -> w.like(Book::getTitle, req.getKeyword())
                     .or().like(Book::getAuthor, req.getKeyword())
                     .or().like(Book::getIsbn, req.getKeyword()));
         }
         if (StrUtil.isNotBlank(req.getStatus())) {
-            // 按图书状态精确筛选（AVAILABLE / BORROWED / DAMAGED / LOST）
             wrapper.eq(Book::getStatus, req.getStatus());
         }
         if (req.getBookshelfId() != null) {
-            // 按书架位置精确筛选
             wrapper.eq(Book::getBookshelfId, req.getBookshelfId());
         }
-        // 2. 按创建时间倒序排，最新上架的图书优先展示
         wrapper.orderByDesc(Book::getCreatedAt);
 
-        // 3. 执行 MyBatis-Plus 分页查询
+        // 2. 执行分页查询
         Page<Book> mpPage = new Page<>(req.getPage(), req.getSize());
         Page<Book> result = bookMapper.selectPage(mpPage, wrapper);
 
-        // 4. 将实体列表流式转换为视图对象（填充分类名、书架名等关联信息）
-        List<BookVO> voList = result.getRecords().stream()
-                .map(this::toBookVO)
+        // 3. 批量预加载关联数据，避免 N+1 查询
+        java.util.Map<Long, String> bookshelfNameMap = new java.util.HashMap<>();
+        java.util.Map<Long, java.util.List<String>> categoryNamesMap = new java.util.HashMap<>();
+
+        // 3a. 批量查询书架名称
+        java.util.Set<Long> bookshelfIds = result.getRecords().stream()
+                .map(Book::getBookshelfId)
+                .filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.toSet());
+        if (!bookshelfIds.isEmpty()) {
+            bookshelfMapper.selectBatchIds(bookshelfIds).forEach(bs ->
+                    bookshelfNameMap.put(bs.getId(), bs.getName()));
+        }
+
+        // 3b. 批量查询分类名称
+        java.util.Set<Long> bookIds = result.getRecords().stream()
+                .map(Book::getId)
+                .collect(java.util.stream.Collectors.toSet());
+        if (!bookIds.isEmpty()) {
+            // 查询所有关联关系
+            java.util.List<BookCategoryRel> allRels = bookCategoryRelMapper.selectList(
+                    new LambdaQueryWrapper<BookCategoryRel>().in(BookCategoryRel::getBookId, bookIds));
+            // 按图书 ID 分组
+            java.util.Map<Long, java.util.List<Long>> bookToCategoryIds = allRels.stream()
+                    .collect(java.util.stream.Collectors.groupingBy(BookCategoryRel::getBookId,
+                            java.util.stream.Collectors.mapping(BookCategoryRel::getCategoryId,
+                                    java.util.stream.Collectors.toList())));
+            // 批量查询所有涉及到的分类
+            java.util.Set<Long> allCategoryIds = allRels.stream()
+                    .map(BookCategoryRel::getCategoryId)
+                    .collect(java.util.stream.Collectors.toSet());
+            java.util.Map<Long, String> categoryMap = new java.util.HashMap<>();
+            if (!allCategoryIds.isEmpty()) {
+                categoryMapper.selectBatchIds(allCategoryIds).forEach(c ->
+                        categoryMap.put(c.getId(), c.getName()));
+            }
+            // 组装每个图书的分类名称列表
+            bookToCategoryIds.forEach((bookId, catIds) -> {
+                java.util.List<String> names = catIds.stream()
+                        .map(categoryMap::get)
+                        .filter(java.util.Objects::nonNull)
+                        .collect(java.util.stream.Collectors.toList());
+                categoryNamesMap.put(bookId, names);
+            });
+        }
+
+        // 4. 使用预加载数据转换 VO
+        java.util.Map<Long, String> finalBookshelfNameMap = bookshelfNameMap;
+        java.util.Map<Long, java.util.List<String>> finalCategoryNamesMap = categoryNamesMap;
+        java.util.List<BookVO> voList = result.getRecords().stream()
+                .map(book -> toBookVOWithCache(book, finalBookshelfNameMap, finalCategoryNamesMap))
                 .toList();
 
         // 5. 组装分页结果返回
@@ -112,7 +156,7 @@ public class BookServiceImpl implements BookService {
      * @throws BusinessException 当图书不存在时抛出 404 异常
      */
     @Override
-    @SentinelResource(value = "bookGetById", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
+    @SentinelResource(value = "bookGetById", fallback = "fallbackObject", fallbackClass = SentinelRuleInitializer.class)
     @Cacheable(value = "book", key = "#id")
     public BookVO getById(Long id) {
         // 1. 根据主键查询图书，不存在则抛出 404 异常
@@ -137,8 +181,9 @@ public class BookServiceImpl implements BookService {
      * @return 新创建的图书视图对象
      * @throws BusinessException 当 ISBN 已存在时抛出 409 异常
      */
-    @Override
-    @SentinelResource(value = "bookCreate", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
+@Override
+    @SentinelResource(value = "bookCreate", fallback = "fallbackObject", fallbackClass = SentinelRuleInitializer.class)
+    @CacheEvict(value = "book", allEntries = true)
     @Transactional(rollbackFor = Exception.class)
     public BookVO create(BookCreateReq req) {
         // 1. 校验 ISBN 唯一性：防止录入已存在的重复图书
@@ -178,7 +223,7 @@ public class BookServiceImpl implements BookService {
      *         当 ISBN 与其他图书重复时抛出 409 异常
      */
     @Override
-    @SentinelResource(value = "bookUpdate", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
+    @SentinelResource(value = "bookUpdate", fallback = "fallbackObject", fallbackClass = SentinelRuleInitializer.class)
     @CacheEvict(value = "book", key = "#id")
     @Transactional(rollbackFor = Exception.class)
     public BookVO update(Long id, BookUpdateReq req) {
@@ -301,6 +346,26 @@ public class BookServiceImpl implements BookService {
             rel.setCategoryId(categoryId);
             bookCategoryRelMapper.insert(rel);
         }
+    }
+
+    /**
+     * 将图书实体转换为视图对象（使用预加载的关联数据，避免 N+1 查询）。
+     *
+     * @param book              图书实体
+     * @param bookshelfNameMap  书架 ID → 名称映射（预加载）
+     * @param categoryNamesMap  图书 ID → 分类名称列表映射（预加载）
+     * @return 图书视图对象
+     */
+    private BookVO toBookVOWithCache(Book book, java.util.Map<Long, String> bookshelfNameMap,
+                                     java.util.Map<Long, java.util.List<String>> categoryNamesMap) {
+        BookVO vo = new BookVO();
+        BeanUtil.copyProperties(book, vo);
+        vo.setPublishDate(book.getPublishDate());
+        vo.setCategoryNames(categoryNamesMap.getOrDefault(book.getId(), java.util.List.of()));
+        if (book.getBookshelfId() != null) {
+            vo.setBookshelfName(bookshelfNameMap.get(book.getBookshelfId()));
+        }
+        return vo;
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.zjw.booknexus.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
@@ -22,5 +23,6 @@ public class LoginReq {
 
     /** 密码（必填） */
     @NotBlank(message = "密码不能为空")
+    @Size(max = 128, message = "密码长度不能超过128位")
     private String password;
 }

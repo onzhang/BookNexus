@@ -95,4 +95,20 @@ public class AuthController {
     public Result<UserVO> me() {
         return Result.success(authService.getCurrentUser(UserContext.getUserId()));
     }
+
+    /**
+     * 用户登出接口。
+     * <p>
+     * POST /api/v1/user/auth/logout
+     * 删除服务端的 Refresh Token，使当前用户的令牌失效。
+     * 前端应同步清除本地存储的 Access Token 和 Refresh Token。
+     * </p>
+     *
+     * @return 统一成功响应
+     */
+    @PostMapping("/user/auth/logout")
+    public Result<Void> logout() {
+        authService.logout(UserContext.getUserId());
+        return Result.success();
+    }
 }
