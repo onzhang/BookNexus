@@ -24,7 +24,6 @@
           </template>
         </el-input>
         <el-button type="primary" @click="handleSearch">搜索</el-button>
-        <el-button @click="resetSearch">重置</el-button>
       </div>
     </el-card>
 
@@ -32,7 +31,7 @@
     <el-card shadow="hover" class="table-card">
       <el-table :data="userList" stripe border v-loading="loading" style="width: 100%">
         <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="username" label="用户名" width="140" />
+        <el-table-column prop="username" label="用户名" min-width="160" />
         <el-table-column prop="email" label="邮箱" min-width="200">
           <template #default="{ row }">
             {{ row.email || '-' }}
@@ -45,20 +44,20 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="100">
+        <el-table-column label="状态" width="90">
           <template #default="{ row }">
-            <el-switch
-              :model-value="row.status === 'ENABLED'"
-              active-text="启用"
-              inactive-text="禁用"
-              @change="(val: boolean) => handleStatusChange(row, val)"
-            />
+            <el-tag :type="row.status === 'ENABLED' ? 'success' : 'danger'" size="small">
+              {{ row.status === 'ENABLED' ? '启用' : '禁用' }}
+            </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="注册时间" width="180" />
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column prop="createdAt" label="注册时间" width="170" />
+        <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="openEditDialog(row)">编辑</el-button>
+            <el-button type="warning" link @click="handleStatusChange(row, row.status !== 'ENABLED')">
+              {{ row.status === 'ENABLED' ? '禁用' : '启用' }}
+            </el-button>
           </template>
         </el-table-column>
       </el-table>

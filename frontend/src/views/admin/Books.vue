@@ -30,7 +30,7 @@
           <el-option label="丢失" value="LOST" />
         </el-select>
         <el-button type="primary" @click="handleSearch">搜索</el-button>
-        <el-button @click="resetSearch">重置</el-button>
+        <el-button @click="resetSearch">清空</el-button>
         <el-button type="success" style="margin-left: auto" @click="openCreateDialog">新增书籍</el-button>
       </div>
     </el-card>
@@ -54,7 +54,7 @@
             {{ row.availableStock }}/{{ row.stock }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="openEditDialog(row)">编辑</el-button>
             <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
