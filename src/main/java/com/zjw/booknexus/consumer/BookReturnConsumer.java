@@ -44,32 +44,35 @@ public class BookReturnConsumer {
     @RabbitListener(queues = RabbitMQConfig.RETURN_QUEUE)
     public void handleReturn(Map<String, Object> message) {
         log.info("收到图书归还消息: {}", message);
+        try {
+            Long bookId = extractLong(message, "bookId");
+            if (bookId == null) {
+                log.warn("归还消息缺少 bookId，跳过处理");
+                return;
+            }
 
-        Long bookId = extractLong(message, "bookId");
-        if (bookId == null) {
-            log.warn("归还消息缺少 bookId，跳过处理");
-            return;
+            Book book = bookMapper.selectById(bookId);
+            String bookTitle = book != null ? book.getTitle() : "未知图书";
+
+            List<Subscription> subscriptions = subscriptionMapper.selectList(
+                    new LambdaQueryWrapper<Subscription>()
+                            .eq(Subscription::getBookId, bookId)
+                            .eq(Subscription::getIsActive, 1));
+
+            for (Subscription sub : subscriptions) {
+                Notification notification = new Notification();
+                notification.setUserId(sub.getUserId());
+                notification.setType(NotificationType.SUBSCRIPTION.name());
+                notification.setTitle("图书可借通知");
+                notification.setContent("您订阅的图书《" + bookTitle + "》已归还，现在可以借阅了。");
+                notification.setIsRead(0);
+                notificationMapper.insert(notification);
+            }
+
+            log.info("图书归还处理完成，bookId={}，通知订阅者 {} 人", bookId, subscriptions.size());
+        } catch (Exception e) {
+            log.error("图书归还消息处理失败，消息={}，错误：{}", message, e.getMessage(), e);
         }
-
-        Book book = bookMapper.selectById(bookId);
-        String bookTitle = book != null ? book.getTitle() : "未知图书";
-
-        List<Subscription> subscriptions = subscriptionMapper.selectList(
-                new LambdaQueryWrapper<Subscription>()
-                        .eq(Subscription::getBookId, bookId)
-                        .eq(Subscription::getIsActive, 1));
-
-        for (Subscription sub : subscriptions) {
-            Notification notification = new Notification();
-            notification.setUserId(sub.getUserId());
-            notification.setType(NotificationType.SUBSCRIPTION.name());
-            notification.setTitle("图书可借通知");
-            notification.setContent("您订阅的图书《" + bookTitle + "》已归还，现在可以借阅了。");
-            notification.setIsRead(0);
-            notificationMapper.insert(notification);
-        }
-
-        log.info("图书归还处理完成，bookId={}，通知订阅者 {} 人", bookId, subscriptions.size());
     }
 
     private Long extractLong(Map<String, Object> map, String key) {
