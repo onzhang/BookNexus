@@ -83,6 +83,14 @@ public class MinIOConfig {
     public String getBucket() { return bucket; }
 
     /**
+     * 获取 MinIO 服务端点地址
+     * <p>供 Service 层构造文件访问 URL 时使用。</p>
+     *
+     * @return MinIO 服务端点地址字符串
+     */
+    public String getEndpoint() { return endpoint; }
+
+    /**
      * 初始化检查并创建存储桶
      * <p>应用启动时自动检查配置的默认存储桶是否存在，若不存在则自动创建。
      * 确保文件上传操作前目标存储桶已就绪，避免因缺失存储桶导致上传失败。
