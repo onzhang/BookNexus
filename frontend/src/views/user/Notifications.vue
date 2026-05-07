@@ -215,7 +215,7 @@ onMounted(() => {
   }
 
   .read-text {
-    color: #909399;
+    color: var(--text-secondary);
     font-size: 13px;
   }
 }

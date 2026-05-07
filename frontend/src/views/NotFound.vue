@@ -34,7 +34,7 @@ const goHome = () => {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: var(--bg-color, #f5f7fa);
+  background: var(--bg-color);
 }
 
 .not-found-content {
@@ -42,13 +42,13 @@ const goHome = () => {
 
   h1 {
     font-size: 96px;
-    color: var(--primary-color, #409EFF);
+    color: var(--primary-color);
     margin: 0 0 16px;
   }
 
   p {
     font-size: 18px;
-    color: var(--text-regular, #606266);
+    color: var(--text-regular);
     margin-bottom: 24px;
   }
 }

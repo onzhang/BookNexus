@@ -107,7 +107,7 @@ onMounted(() => {
 
     .profile-avatar {
       background-color: var(--primary-color);
-      color: #fff;
+      color: var(--text-inverse);
       font-size: 32px;
       font-weight: 600;
     }

@@ -213,7 +213,7 @@ onMounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f5f7fa;
+    background: var(--bg-card);
     border-radius: 4px;
     overflow: hidden;
 

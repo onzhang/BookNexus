@@ -195,7 +195,7 @@ onMounted(() => {
   }
 
   .reply-text {
-    color: #67c23a;
+    color: var(--success-color);
   }
 }
 </style>
