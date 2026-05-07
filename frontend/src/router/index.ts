@@ -20,7 +20,7 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     redirect: () => {
       const token = localStorage.getItem(TOKEN_KEY)
-      if (!token) return '/login'
+      if (!token) return '/welcome'
       try {
         const user = JSON.parse(localStorage.getItem(USER_KEY) || 'null')
         if (user?.role === 'ADMIN') return '/admin/dashboard'
@@ -29,6 +29,12 @@ const routes: RouteRecordRaw[] = [
         return '/user/home'
       }
     }
+  },
+  {
+    path: '/welcome',
+    name: 'Welcome',
+    component: () => import('@/views/Welcome.vue'),
+    meta: { title: '欢迎' }
   },
   {
     path: '/login',
@@ -160,11 +166,14 @@ const router = createRouter({
  * 全局前置守卫
  * @description 设置页面标题；未登录且非登录页时自动跳转 /login
  */
+/** 无需登录即可访问的公开路径 */
+const PUBLIC_PATHS = ['/login', '/welcome']
+
 router.beforeEach((to, _from, next) => {
-  document.title = `${to.meta.title || 'BookNexus'} - 图书管理系统`
+  document.title = `${to.meta.title || 'BookNexus'} - 墨韵书斋`
 
   const token = localStorage.getItem(TOKEN_KEY)
-  if (to.path !== '/login' && !token) {
+  if (!PUBLIC_PATHS.includes(to.path) && !token) {
     next('/login')
   } else {
     next()
