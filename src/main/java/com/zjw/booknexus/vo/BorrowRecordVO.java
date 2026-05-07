@@ -33,6 +33,9 @@ public class BorrowRecordVO {
     /** 书籍名称 */
     private String bookTitle;
 
+    /** 书籍作者 */
+    private String bookAuthor;
+
     /** 借书日期 */
     private LocalDate borrowDate;
 

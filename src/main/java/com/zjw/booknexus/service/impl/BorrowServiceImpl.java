@@ -107,32 +107,76 @@ public class BorrowServiceImpl implements BorrowService {
             throw new BusinessException(409, ErrorCode.ALREADY_BORROWED);
         }
 
-        // 5. 创建借阅记录：借阅日期为当天，应还日期为 30 天后，初始罚金为 0
+        // 5. 创建借阅记录：借阅日期为当天，应还日期为 30 天后，初始状态为 PENDING，等待管理员审批
         LocalDate today = LocalDate.now();
         BorrowRecord record = new BorrowRecord();
         record.setUserId(userId);
         record.setBookId(req.getBookId());
         record.setBorrowDate(today);
         record.setDueDate(today.plusDays(BORROW_DAYS));
-        record.setStatus(BorrowStatus.BORROWED.name());
+        record.setStatus(BorrowStatus.PENDING.name());
         record.setRenewCount(0);
         record.setFineAmount(BigDecimal.ZERO);
         borrowRecordMapper.insert(record);
 
-        // 6. 原子化扣减可用库存，防止并发超借
-        int rows = bookMapper.decrementAvailableStock(req.getBookId());
+        // 6. 查询用户信息并组装视图对象返回（库存暂不扣减，待管理员审批后处理）
+        User user = userMapper.selectById(userId);
+        return buildVO(record, book, user);
+    }
+
+    /**
+     * 管理员审批借阅申请。
+     * <p>
+     * 校验借阅记录状态为 PENDING，通过后更新状态为 BORROWED，
+     * 并原子化扣减图书可用库存。若库存降为 0 则更新图书状态为 BORROWED。
+     * </p>
+     *
+     * @param recordId 借阅记录 ID
+     * @return 更新后的借阅记录视图对象
+     * @throws BusinessException 当记录不存在或状态不合法时抛出 409 异常
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public BorrowRecordVO approveBorrow(Long recordId) {
+        // 1. 查询借阅记录
+        BorrowRecord record = borrowRecordMapper.selectById(recordId);
+        if (record == null) {
+            throw new BusinessException(404, ErrorCode.RECORD_NOT_FOUND);
+        }
+
+        // 2. 校验状态：仅 PENDING 允许审批
+        if (!BorrowStatus.PENDING.name().equals(record.getStatus())) {
+            throw new BusinessException(409, ErrorCode.INVALID_STATUS);
+        }
+
+        // 3. 校验图书库存是否仍充足
+        Book book = bookMapper.selectById(record.getBookId());
+        if (book == null) {
+            throw new BusinessException(404, ErrorCode.BOOK_NOT_FOUND);
+        }
+        if (book.getAvailableStock() <= 0) {
+            throw new BusinessException(409, ErrorCode.BOOK_NOT_AVAILABLE);
+        }
+
+        // 4. 更新借阅记录状态为 BORROWED
+        record.setStatus(BorrowStatus.BORROWED.name());
+        borrowRecordMapper.updateById(record);
+
+        // 5. 原子化扣减可用库存
+        int rows = bookMapper.decrementAvailableStock(record.getBookId());
         if (rows == 0) {
             throw new BusinessException(409, ErrorCode.BOOK_NOT_AVAILABLE);
         }
-        // 扣减成功后重新查询图书状态，若库存降为 0 则更新状态为 BORROWED
-        book = bookMapper.selectById(req.getBookId());
+
+        // 6. 若库存降为 0 则更新图书状态
+        book = bookMapper.selectById(record.getBookId());
         if (book.getAvailableStock() == 0) {
             book.setStatus(BookStatus.BORROWED.name());
             bookMapper.updateById(book);
         }
 
-        // 7. 查询用户信息并组装视图对象返回
-        User user = userMapper.selectById(userId);
+        // 7. 组装视图对象返回
+        User user = userMapper.selectById(record.getUserId());
         return buildVO(record, book, user);
     }
 
@@ -162,8 +206,50 @@ public class BorrowServiceImpl implements BorrowService {
         if (record == null) {
             throw new BusinessException(404, ErrorCode.RECORD_NOT_FOUND);
         }
-        // 2. 调用核心归还逻辑（状态校验、罚金计算、图书状态更新）
-        return doReturn(record);
+
+        // 2. 校验借阅记录状态：仅 BORROWED（借阅中）或 RENEWED（已续借）允许申请归还
+        String status = record.getStatus();
+        if (!BorrowStatus.BORROWED.name().equals(status) && !BorrowStatus.RENEWED.name().equals(status)) {
+            throw new BusinessException(409, ErrorCode.INVALID_STATUS);
+        }
+
+        // 3. 更新记录状态为 RETURN_PENDING，等待管理员确认入库（不恢复库存，不计算罚金）
+        record.setStatus(BorrowStatus.RETURN_PENDING.name());
+        borrowRecordMapper.updateById(record);
+
+        // 4. 组装视图对象返回
+        Book book = bookMapper.selectById(record.getBookId());
+        User user = userMapper.selectById(record.getUserId());
+        return buildVO(record, book, user);
+    }
+
+    /**
+     * 管理员确认归还图书。
+     * <p>
+     * 校验借阅记录状态为 RETURN_PENDING，通过后更新状态为 RETURNED，
+     * 计算逾期罚金，并恢复图书可用库存。
+     * </p>
+     *
+     * @param recordId 借阅记录 ID
+     * @return 更新后的借阅记录视图对象
+     * @throws BusinessException 当记录不存在或状态不合法时抛出 409 异常
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public BorrowRecordVO confirmReturn(Long recordId) {
+        // 1. 查询借阅记录
+        BorrowRecord record = borrowRecordMapper.selectById(recordId);
+        if (record == null) {
+            throw new BusinessException(404, ErrorCode.RECORD_NOT_FOUND);
+        }
+
+        // 2. 校验状态：仅 RETURN_PENDING 允许确认归还
+        if (!BorrowStatus.RETURN_PENDING.name().equals(record.getStatus())) {
+            throw new BusinessException(409, ErrorCode.INVALID_STATUS);
+        }
+
+        // 3. 调用核心归还确认逻辑（计算罚金、恢复库存）
+        return doConfirmReturn(record);
     }
 
     /**
@@ -187,27 +273,29 @@ public class BorrowServiceImpl implements BorrowService {
         if (record == null) {
             throw new BusinessException(404, ErrorCode.RECORD_NOT_FOUND);
         }
-        // 2. 调用核心归还逻辑
-        return doReturn(record);
+        // 2. 调用核心归还确认逻辑（支持 BORROWED / RENEWED / RETURN_PENDING 状态）
+        return doConfirmReturn(record);
     }
 
     /**
-     * 执行归还核心逻辑。
+     * 执行归还确认核心逻辑。
      * <p>
-     * 校验借阅记录状态（仅 BORROWED 或 RENEWED 可归还），
+     * 校验借阅记录状态（BORROWED / RENEWED / RETURN_PENDING 均可确认归还），
      * 计算逾期天数及罚金（若逾期），更新借阅记录状态为 RETURNED，
      * 并将对应图书状态恢复为 AVAILABLE。
-     * 该方法为 returnBook 和 adminReturnRecord 的共用逻辑。
+     * 该方法为 confirmReturn 和 adminReturnRecord 的共用逻辑。
      * </p>
      *
      * @param record 借阅记录实体
      * @return 更新后的借阅记录视图对象
      * @throws BusinessException 当记录状态不合法时抛出 409 异常
      */
-    private BorrowRecordVO doReturn(BorrowRecord record) {
-        // 1. 校验借阅记录状态：仅 BORROWED（借阅中）或 RENEWED（已续借）允许归还
+    private BorrowRecordVO doConfirmReturn(BorrowRecord record) {
+        // 1. 校验借阅记录状态：BORROWED / RENEWED / RETURN_PENDING 均允许确认归还
         String status = record.getStatus();
-        if (!BorrowStatus.BORROWED.name().equals(status) && !BorrowStatus.RENEWED.name().equals(status)) {
+        if (!BorrowStatus.BORROWED.name().equals(status)
+                && !BorrowStatus.RENEWED.name().equals(status)
+                && !BorrowStatus.RETURN_PENDING.name().equals(status)) {
             throw new BusinessException(409, ErrorCode.INVALID_STATUS);
         }
 
@@ -425,6 +513,7 @@ public class BorrowServiceImpl implements BorrowService {
         vo.setUsername(user != null ? user.getUsername() : null);   // 用户可能已被删除，此时用户名为 null
         vo.setBookId(record.getBookId());
         vo.setBookTitle(book != null ? book.getTitle() : null);     // 图书可能已被删除，此时书名为 null
+        vo.setBookAuthor(book != null ? book.getAuthor() : null);   // 图书可能已被删除，此时作者为 null
         vo.setBorrowDate(record.getBorrowDate());
         vo.setDueDate(record.getDueDate());
         vo.setReturnDate(record.getReturnDate());
