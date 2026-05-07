@@ -14,7 +14,7 @@
       <el-col :xs="24" :sm="12" :lg="6">
         <el-card shadow="hover" class="stat-card">
           <div class="stat-content">
-            <div class="stat-icon" style="background-color: rgba(64, 158, 255, 0.1); color: #409EFF;">
+            <div class="stat-icon" style="background-color: var(--accent-bg); color: var(--primary-color);">
               <el-icon :size="28"><Reading /></el-icon>
             </div>
             <div class="stat-info">
@@ -27,7 +27,7 @@
       <el-col :xs="24" :sm="12" :lg="6">
         <el-card shadow="hover" class="stat-card">
           <div class="stat-content">
-            <div class="stat-icon" style="background-color: rgba(103, 194, 58, 0.1); color: #67C23A;">
+            <div class="stat-icon" style="background-color: var(--success-bg); color: var(--success-color);">
               <el-icon :size="28"><User /></el-icon>
             </div>
             <div class="stat-info">
@@ -40,7 +40,7 @@
       <el-col :xs="24" :sm="12" :lg="6">
         <el-card shadow="hover" class="stat-card">
           <div class="stat-content">
-            <div class="stat-icon" style="background-color: rgba(230, 162, 60, 0.1); color: #E6A23C;">
+            <div class="stat-icon" style="background-color: var(--warning-bg); color: var(--warning-color);">
               <el-icon :size="28"><Document /></el-icon>
             </div>
             <div class="stat-info">
@@ -53,7 +53,7 @@
       <el-col :xs="24" :sm="12" :lg="6">
         <el-card shadow="hover" class="stat-card">
           <div class="stat-content">
-            <div class="stat-icon" style="background-color: rgba(245, 108, 108, 0.1); color: #F56C6C;">
+            <div class="stat-icon" style="background-color: var(--danger-bg); color: var(--danger-color);">
               <el-icon :size="28"><WarningFilled /></el-icon>
             </div>
             <div class="stat-info">

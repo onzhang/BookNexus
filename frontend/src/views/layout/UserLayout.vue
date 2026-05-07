@@ -19,9 +19,9 @@
         :collapse="isCollapse"
         :collapse-transition="false"
         router
-        background-color="#304156"
-        text-color="#bfcbd9"
-        active-text-color="#409EFF"
+        background-color="#4A3728"
+        text-color="#D4C5B2"
+        active-text-color="#C4956A"
       >
         <el-menu-item index="/user/home">
           <el-icon><HomeFilled /></el-icon>
@@ -133,7 +133,7 @@ async function handleLogout() {
 }
 
 .user-aside {
-  background-color: var(--sidebar-bg);
+  background-color: #4A3728;
   overflow: hidden;
   transition: width 0.3s;
 
@@ -144,12 +144,15 @@ async function handleLogout() {
     justify-content: center;
     cursor: pointer;
     padding: 0 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 
     .logo-text {
       font-size: 20px;
       font-weight: 700;
       color: #fff;
       white-space: nowrap;
+      font-family: 'Playfair Display', 'Noto Serif SC', serif;
+      letter-spacing: 1px;
     }
   }
 

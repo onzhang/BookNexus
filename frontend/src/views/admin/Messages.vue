@@ -184,14 +184,14 @@ onMounted(() => {
   }
 
   .reply-preview {
-    background: #f5f7fa;
+    background: var(--bg-color);
     padding: 12px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     margin-bottom: 16px;
 
     p {
       margin: 8px 0 0;
-      color: #606266;
+      color: var(--text-regular);
       line-height: 1.6;
     }
   }
