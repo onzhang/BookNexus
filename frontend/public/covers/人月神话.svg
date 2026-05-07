@@ -1,0 +1,5 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='400' height='600'>
+  <rect width='400' height='600' fill='#8B6F47' rx='12'/>
+  <text x='200' y='260' text-anchor='middle' fill='#F5F0E8' font-size='48' font-family='Noto Serif SC, serif'>人月神话</text>
+  <text x='200' y='320' text-anchor='middle' fill='#D4A76A' font-size='20' font-family='Noto Serif SC, serif'>Frederick P. Brooks Jr.</text>
+</svg>
