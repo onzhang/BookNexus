@@ -49,7 +49,9 @@
           <template #title>借阅管理</template>
         </el-menu-item>
         <el-menu-item index="/admin/announcements">
-          <el-icon><Bell /></el-icon>
+          <NotificationBadge :count="0">
+            <el-icon><Bell /></el-icon>
+          </NotificationBadge>
           <template #title>公告管理</template>
         </el-menu-item>
         <el-menu-item index="/admin/messages">
@@ -100,11 +102,14 @@ import {
   ChatDotRound
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
+import { useNotificationStore } from '@/stores/notification'
+import NotificationBadge from '@/components/NotificationBadge.vue'
 import { ElMessageBox } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const notificationStore = useNotificationStore()
 
 /** 侧边栏是否折叠 */
 const isCollapse = ref(false)

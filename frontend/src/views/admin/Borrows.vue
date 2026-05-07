@@ -24,14 +24,15 @@
           </template>
         </el-input>
         <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width: 160px">
-          <el-option label="待确认" value="PENDING" />
+          <el-option label="待审批" value="PENDING" />
           <el-option label="借出中" value="BORROWED" />
           <el-option label="已续借" value="RENEWED" />
           <el-option label="已归还" value="RETURNED" />
           <el-option label="逾期" value="OVERDUE" />
+          <el-option label="待归还确认" value="RETURN_PENDING" />
         </el-select>
         <el-button type="primary" @click="handleSearch">搜索</el-button>
-        <el-button @click="resetSearch">重置</el-button>
+        <el-button @click="resetSearch">清空</el-button>
       </div>
     </el-card>
 
@@ -49,8 +50,8 @@
             {{ row.bookTitle || '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="borrowDate" label="借阅日期" width="180" />
-        <el-table-column prop="dueDate" label="到期日期" width="180" />
+        <el-table-column prop="borrowDate" label="借阅日期" width="170" />
+        <el-table-column prop="dueDate" label="到期日期" width="170" />
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="statusTagType(row.status)">
@@ -63,8 +64,24 @@
             {{ row.fineAmount != null ? `¥${row.fineAmount}` : '-' }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="140" fixed="right">
+        <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
+            <el-button
+              v-if="row.status === 'PENDING'"
+              type="success"
+              link
+              @click="handleApprove(row)"
+            >
+              确认借阅
+            </el-button>
+            <el-button
+              v-if="row.status === 'RETURN_PENDING'"
+              type="success"
+              link
+              @click="handleConfirmReturn(row)"
+            >
+              确认归还
+            </el-button>
             <el-button
               v-if="row.status === 'BORROWED' || row.status === 'OVERDUE' || row.status === 'RENEWED'"
               type="primary"
@@ -119,13 +136,14 @@ const statusFilter = ref('')
 
 /** 借阅状态 → 中文文本映射 */
 const statusTextMap: Record<string, string> = {
-  PENDING: '待确认',
+  PENDING: '待审批',
   BORROWED: '借出中',
   RENEWED: '已续借',
   RETURNED: '已归还',
   OVERDUE: '逾期',
   APPROVED: '已通过',
-  REJECTED: '已拒绝'
+  REJECTED: '已拒绝',
+  RETURN_PENDING: '待归还确认'
 }
 
 /** 借阅状态 → Element Plus Tag 类型映射 */
@@ -136,7 +154,8 @@ const statusTagMap: Record<string, string> = {
   RETURNED: 'info',
   OVERDUE: 'danger',
   APPROVED: 'success',
-  REJECTED: 'info'
+  REJECTED: 'info',
+  RETURN_PENDING: 'warning'
 }
 
 /**
@@ -186,6 +205,34 @@ function resetSearch() {
   statusFilter.value = ''
   page.value = 1
   fetchBorrows()
+}
+
+/**
+ * 确认借阅（管理员审批 PENDING 状态的借阅申请）
+ * @param row - 要审批的借阅记录
+ */
+async function handleApprove(row: BorrowRecord) {
+  try {
+    await api.put(`/v1/admin/borrows/${row.id}/approve`)
+    ElMessage.success('借阅已批准')
+    fetchBorrows()
+  } catch {
+    // Error handled by interceptor
+  }
+}
+
+/**
+ * 确认归还（管理员确认 RETURN_PENDING 状态的归还）
+ * @param row - 要确认归还的借阅记录
+ */
+async function handleConfirmReturn(row: BorrowRecord) {
+  try {
+    await api.put(`/v1/admin/borrows/${row.id}/confirm-return`)
+    ElMessage.success('归还已确认')
+    fetchBorrows()
+  } catch {
+    // Error handled by interceptor
+  }
 }
 
 /**

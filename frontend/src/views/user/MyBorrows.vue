@@ -67,7 +67,7 @@
                 续借
               </el-button>
               <el-button
-                v-if="row.status === 'BORROWED' || row.status === 'RENEWED' || row.status === 'PENDING'"
+                v-if="row.status === 'BORROWED' || row.status === 'RENEWED'"
                 type="success"
                 link
                 @click="handleReturn(row.id)"
@@ -115,11 +115,12 @@ const total = ref(0)
 
 /** 借阅状态 → 中文文本映射 */
 const statusTextMap: Record<string, string> = {
-  PENDING: '待确认',
+  PENDING: '待审批',
   BORROWED: '借阅中',
   RENEWED: '已续借',
   RETURNED: '已归还',
-  OVERDUE: '已逾期'
+  OVERDUE: '已逾期',
+  RETURN_PENDING: '待归还确认'
 }
 
 /** 借阅状态 → Element Plus Tag 类型映射 */
@@ -128,7 +129,8 @@ const statusTagMap: Record<string, string> = {
   BORROWED: '',
   RENEWED: 'success',
   RETURNED: 'info',
-  OVERDUE: 'danger'
+  OVERDUE: 'danger',
+  RETURN_PENDING: 'warning'
 }
 
 /**

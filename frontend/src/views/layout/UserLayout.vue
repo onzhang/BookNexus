@@ -36,7 +36,9 @@
           <template #title>我的收藏</template>
         </el-menu-item>
         <el-menu-item index="/user/notifications">
-          <el-icon><Bell /></el-icon>
+          <NotificationBadge :count="notificationStore.unreadCount">
+            <el-icon><Bell /></el-icon>
+          </NotificationBadge>
           <template #title>我的通知</template>
         </el-menu-item>
         <el-menu-item index="/user/messages">
@@ -85,6 +87,14 @@
       <el-main class="user-main">
         <router-view />
       </el-main>
+
+      <!-- 通知弹窗队列 -->
+      <NotificationPopup
+        :notifications="notificationStore.popupQueue"
+        :visible="notificationStore.popupQueue.length > 0"
+        @close="(id) => notificationStore.removeFromQueue(id)"
+        @click="(id) => handlePopupClick(id)"
+      />
     </el-container>
   </el-container>
 </template>
@@ -94,11 +104,15 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { HomeFilled, Document, Star, User, Bell, ChatDotRound, Expand, Fold } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
+import { useNotificationStore } from '@/stores/notification'
 import { ElMessageBox } from 'element-plus'
+import NotificationBadge from '@/components/NotificationBadge.vue'
+import NotificationPopup from '@/components/NotificationPopup.vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const notificationStore = useNotificationStore()
 
 /** 侧边栏是否折叠 */
 const isCollapse = ref(false)
@@ -124,6 +138,15 @@ async function handleLogout() {
   }
   userStore.logout()
   router.push('/login')
+}
+
+/**
+ * 处理通知弹窗点击事件
+ * @param id 通知ID
+ */
+function handlePopupClick(id: number) {
+  notificationStore.removeFromQueue(id)
+  router.push('/user/notifications')
 }
 </script>
 
