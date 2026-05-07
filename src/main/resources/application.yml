@@ -13,6 +13,10 @@ spring:
   cache:
     type: redis
 
+# JWT 认证配置（生产环境请通过环境变量覆盖 jwt.secret）
+jwt:
+  secret: booknexus-jwt-secret-key-2026-very-long-secure-key!!
+
 server:
   port: 8080
 
