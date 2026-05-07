@@ -32,7 +32,7 @@
           border
           style="width: 100%"
         >
-          <el-table-column label="封面" width="80">
+          <el-table-column label="封面" width="70">
             <template #default="{ row }">
               <div class="table-cover">
                 <img v-if="row.bookCoverUrl" :src="row.bookCoverUrl" :alt="row.bookTitle" />
@@ -40,9 +40,9 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column prop="bookTitle" label="书名" min-width="160" />
-          <el-table-column prop="bookAuthor" label="作者" width="120" />
-          <el-table-column prop="createdAt" label="收藏时间" width="180" />
+          <el-table-column prop="bookTitle" label="书名" min-width="200" />
+          <el-table-column prop="bookAuthor" label="作者" width="140" />
+          <el-table-column prop="createdAt" label="收藏时间" width="160" />
           <el-table-column label="状态" width="100">
             <template #default="{ row }">
               <el-tag :type="statusTagType(row.bookStatus)" size="small">
