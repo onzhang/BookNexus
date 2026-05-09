@@ -43,9 +43,17 @@
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" label="创建时间" width="170" />
-        <el-table-column label="操作" width="140" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="openEditDialog(row)">编辑</el-button>
+            <el-button
+              v-if="row.isPublished === 0"
+              type="success"
+              link
+              @click="handlePublish(row)"
+            >
+              发布
+            </el-button>
             <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -221,6 +229,26 @@ async function handleSubmit() {
     // Error handled by interceptor
   } finally {
     submitting.value = false
+  }
+}
+
+/** 发布公告 */
+async function handlePublish(row: Announcement) {
+  try {
+    await ElMessageBox.confirm(
+      `确定要发布公告「${row.title}」吗？发布后将通知所有用户。`,
+      '发布确认',
+      { confirmButtonText: '确定', cancelButtonText: '取消', type: 'info' }
+    )
+  } catch {
+    return
+  }
+  try {
+    await api.put(AdminAPI.ANNOUNCEMENT_UPDATE(row.id).path, { isPublished: 1 })
+    ElMessage.success('发布成功')
+    fetchList()
+  } catch {
+    // Error handled by interceptor
   }
 }
 
