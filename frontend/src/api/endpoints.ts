@@ -84,6 +84,8 @@ export const UserAPI = {
   // -- 通知管理 --
   /** 我的通知列表 */
   NOTIFICATION_PAGE: { path: '/v1/user/notifications', method: HttpMethod.GET },
+  /** 未读通知数量 */
+  NOTIFICATION_UNREAD_COUNT: { path: '/v1/user/notifications/unread-count', method: HttpMethod.GET },
   /** 标记通知已读 */
   NOTIFICATION_READ: (id: number | string) => ({ path: `/v1/user/notifications/${id}/read`, method: HttpMethod.PUT }),
 

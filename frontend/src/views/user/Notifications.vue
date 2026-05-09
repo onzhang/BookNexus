@@ -107,6 +107,7 @@ import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import api from '@/api'
 import { UserAPI } from '@/api/endpoints'
+import { useNotificationStore } from '@/stores/notification'
 import type { Notification, PageResult } from '@/types'
 
 /** 通知记录列表 */
@@ -125,6 +126,8 @@ const readFilter = ref<number | ''>('')
 const detailVisible = ref(false)
 /** 当前选中的通知 */
 const selectedNotification = ref<Notification | null>(null)
+const notifStore = useNotificationStore()
+const notifStore = useNotificationStore()
 
 /** 通知类型 → 中文文本映射 */
 const typeTextMap: Record<string, string> = {
@@ -199,6 +202,7 @@ function handleViewDetail(row: Notification) {
 async function handleMarkRead(id: number) {
   try {
     await api.put(UserAPI.NOTIFICATION_READ(id).path)
+    if (notifStore.unreadCount > 0) notifStore.setUnreadCount(notifStore.unreadCount - 1)
     ElMessage.success('已标记为已读')
     fetchRecords()
   } catch {

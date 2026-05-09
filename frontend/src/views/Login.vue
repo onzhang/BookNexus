@@ -139,8 +139,8 @@ function toggleMode() {
   form.email = ''
 }
 
-/** 新用户欢迎通知弹窗：将两条欢迎通知推送到右上角弹窗队列 */
-async function showWelcomeIfNewUser() {
+/** 注册后推送欢迎通知到弹窗队列并标记已读 */
+async function showWelcomeNotifications() {
   try {
     const res = await api.get<PageResult<Notification>>(UserAPI.NOTIFICATION_PAGE.path, {
       params: { isRead: 0, size: 10 }
@@ -154,12 +154,27 @@ async function showWelcomeIfNewUser() {
 
     for (const n of welcomeNotifs) {
       notificationStore.addToQueue(n)
-      notificationStore.setUnreadCount(notificationStore.unreadCount + 1)
     }
-    // 并发标记已读
     await Promise.all(welcomeNotifs.map(n =>
       api.put(UserAPI.NOTIFICATION_READ(n.id).path).catch(() => {})
     ))
+  } catch {
+    // 非关键流程，失败静默
+  }
+}
+
+/** 登录后加载所有未读通知到弹窗队列，并同步红圈数字 */
+async function loadUnreadNotifications() {
+  try {
+    const [notifRes, countRes] = await Promise.all([
+      api.get<PageResult<Notification>>(UserAPI.NOTIFICATION_PAGE.path, { params: { isRead: 0, size: 20 } }),
+      api.get<number>(UserAPI.NOTIFICATION_UNREAD_COUNT.path)
+    ])
+    const unreadNotifs = notifRes.data.data?.records ?? []
+    for (const n of unreadNotifs) {
+      notificationStore.addToQueue(n)
+    }
+    notificationStore.setUnreadCount(countRes.data.data ?? 0)
   } catch {
     // 非关键流程，失败静默
   }
@@ -190,15 +205,16 @@ const handleSubmit = async () => {
       }
       await userStore.register(registerData as any)
       ElMessage.success('注册成功，欢迎加入墨韵书斋')
+      await showWelcomeNotifications()
+      loadUnreadNotifications()
     } else {
       await userStore.login({
         username: form.username,
         password: form.password
       })
       ElMessage.success('登录成功')
+      loadUnreadNotifications()
     }
-    // 检查新用户欢迎通知，推送到右上角弹窗
-    showWelcomeIfNewUser()
     router.push(userStore.isAdmin ? '/admin/dashboard' : '/user/home')
   } catch {
     // Error already shown by interceptor

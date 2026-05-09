@@ -100,12 +100,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { HomeFilled, Document, Star, User, Bell, ChatDotRound, Expand, Fold } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useNotificationStore } from '@/stores/notification'
 import { ElMessageBox } from 'element-plus'
+import api from '@/api'
+import { UserAPI } from '@/api/endpoints'
 import NotificationBadge from '@/components/NotificationBadge.vue'
 import NotificationPopup from '@/components/NotificationPopup.vue'
 
@@ -121,6 +123,26 @@ const isMobileMenuOpen = ref(false)
 
 /** 当前激活的菜单项路径 */
 const activeMenu = computed(() => route.path)
+
+/** 加载未读通知数量 */
+onMounted(async () => {
+  try {
+    const res = await api.get<number>(UserAPI.NOTIFICATION_UNREAD_COUNT.path)
+    notificationStore.setUnreadCount(res.data.data ?? 0)
+  } catch {
+    // 静默失败
+  }
+})
+
+/** 加载未读通知数量 */
+onMounted(async () => {
+  try {
+    const res = await api.get<number>(UserAPI.NOTIFICATION_UNREAD_COUNT.path)
+    notificationStore.setUnreadCount(res.data.data ?? 0)
+  } catch {
+    // 静默失败
+  }
+})
 
 /**
  * 退出登录
@@ -144,8 +166,12 @@ async function handleLogout() {
  * 处理通知弹窗点击事件
  * @param id 通知ID
  */
-function handlePopupClick(id: number) {
+async function handlePopupClick(id: number) {
   notificationStore.removeFromQueue(id)
+  if (notificationStore.unreadCount > 0) {
+    notificationStore.setUnreadCount(notificationStore.unreadCount - 1)
+  }
+  await api.put(UserAPI.NOTIFICATION_READ(id).path).catch(() => {})
   router.push('/user/notifications')
 }
 </script>
