@@ -91,7 +91,13 @@ export const UserAPI = {
   /** 提交留言 */
   MESSAGE_CREATE: { path: '/v1/user/messages', method: HttpMethod.POST },
   /** 我的留言列表 */
-  MESSAGE_MY_PAGE: { path: '/v1/user/messages', method: HttpMethod.GET }
+  MESSAGE_MY_PAGE: { path: '/v1/user/messages', method: HttpMethod.GET },
+
+  // -- 个人资料 --
+  /** 更新个人资料 */
+  PROFILE_UPDATE: { path: '/v1/user/profile', method: HttpMethod.PUT },
+  /** 上传头像 */
+  PROFILE_AVATAR: { path: '/v1/user/profile/avatar', method: HttpMethod.POST }
 } as const
 
 /** ==================== 管理端接口（需 ADMIN 角色） ==================== */

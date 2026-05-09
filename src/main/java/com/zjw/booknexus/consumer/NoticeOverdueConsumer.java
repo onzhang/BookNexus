@@ -39,29 +39,32 @@ public class NoticeOverdueConsumer {
     @RabbitListener(queues = RabbitMQConfig.OVERDUE_QUEUE)
     public void handleOverdue(Map<String, Object> message) {
         log.info("收到逾期通知消息: {}", message);
+        try {
+            Long userId = extractLong(message, "userId");
+            Long bookId = extractLong(message, "bookId");
+            Long overdueDays = extractLong(message, "overdueDays");
 
-        Long userId = extractLong(message, "userId");
-        Long bookId = extractLong(message, "bookId");
-        Long overdueDays = extractLong(message, "overdueDays");
+            if (userId == null || bookId == null) {
+                log.warn("逾期消息缺少必要字段，跳过处理");
+                return;
+            }
 
-        if (userId == null || bookId == null) {
-            log.warn("逾期消息缺少必要字段，跳过处理");
-            return;
+            Book book = bookMapper.selectById(bookId);
+            String bookTitle = book != null ? book.getTitle() : "未知图书";
+            long days = overdueDays != null ? overdueDays : 0L;
+
+            Notification notification = new Notification();
+            notification.setUserId(userId);
+            notification.setType(NotificationType.OVERDUE.name());
+            notification.setTitle("图书逾期催还通知");
+            notification.setContent(String.format("您借阅的图书《%s》已逾期 %d 天，请尽快归还以免产生更多罚金。", bookTitle, days));
+            notification.setIsRead(0);
+            notificationMapper.insert(notification);
+
+            log.info("逾期通知已发送，userId={}，bookId={}，overdueDays={}", userId, bookId, days);
+        } catch (Exception e) {
+            log.error("逾期通知处理失败，消息={}，错误：{}", message, e.getMessage(), e);
         }
-
-        Book book = bookMapper.selectById(bookId);
-        String bookTitle = book != null ? book.getTitle() : "未知图书";
-        long days = overdueDays != null ? overdueDays : 0L;
-
-        Notification notification = new Notification();
-        notification.setUserId(userId);
-        notification.setType(NotificationType.OVERDUE.name());
-        notification.setTitle("图书逾期催还通知");
-        notification.setContent(String.format("您借阅的图书《%s》已逾期 %d 天，请尽快归还以免产生更多罚金。", bookTitle, days));
-        notification.setIsRead(0);
-        notificationMapper.insert(notification);
-
-        log.info("逾期通知已发送，userId={}，bookId={}，overdueDays={}", userId, bookId, days);
     }
 
     private Long extractLong(Map<String, Object> map, String key) {

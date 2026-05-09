@@ -1,7 +1,7 @@
 /**
  * JWT 登录拦截器
  * <p>基于 {@link HandlerInterceptor} 实现对 API 请求的认证与授权。
- * 拦截所有非 OPTIONS 请求，验证请求头中的 Bearer Token，</p>
+ * 拦截所有非 OPTIONS 请求，验证请求头中的 Bearer Token。</p>
  *
  * <p>核心功能：</p>
  * <ul>
@@ -11,13 +11,15 @@
  *   <li>用户信息注入 — 将 userId 和 role 写入 request attribute，供后续业务层使用</li>
  * </ul>
  *
- * <p>校验失败时直接返回 JSON 响应（401/403），不继续执行请求链。</p>
+ * <p>校验失败时返回统一格式的 JSON 响应（使用 {@link Result} 类），包含 requestId 和 timestamp 字段。</p>
  *
  * @author 张俊文
  * @since 2026-04-30
  */
 package com.zjw.booknexus.interceptor;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zjw.booknexus.common.Result;
 import com.zjw.booknexus.utils.JwtUtils;
 import com.zjw.booknexus.utils.UserContext;
 import io.jsonwebtoken.Claims;
@@ -29,25 +31,16 @@ import org.springframework.web.servlet.HandlerInterceptor;
 public class LoginInterceptor implements HandlerInterceptor {
 
     private final JwtUtils jwtUtils;
+    private final ObjectMapper objectMapper;
 
     public LoginInterceptor(JwtUtils jwtUtils) {
         this.jwtUtils = jwtUtils;
+        this.objectMapper = new ObjectMapper();
     }
 
-    /**
-     * 前置拦截 — 执行认证与授权校验
-     * <p>处理流程：OPTIONS 预检请求直接放行 → 提取 Authorization 头 → 解析并校验 Token →
-     * 校验 Token 类型 → 校验管理端权限 → 注入用户信息到请求上下文。</p>
-     *
-     * @param request  当前 HTTP 请求
-     * @param response 当前 HTTP 响应
-     * @param handler  被调用的处理器对象
-     * @return true 放行请求，false 拦截请求并返回错误响应
-     * @throws Exception 处理过程中可能抛出的异常
-     */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        // 1. 放行 OPTIONS 预检请求，浏览器跨域时需要
+        // 1. 放行 OPTIONS 预检请求
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             return true;
         }
@@ -55,8 +48,7 @@ public class LoginInterceptor implements HandlerInterceptor {
         // 2. 从请求头中提取 Authorization: Bearer <token>
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            // 缺少令牌或格式错误，返回 401 未授权
-            sendJson(response, 401, "{\"code\":401,\"message\":\"unauthorized\"}");
+            sendResult(response, 401, Result.unauthorized("unauthorized"));
             return false;
         }
 
@@ -67,10 +59,10 @@ public class LoginInterceptor implements HandlerInterceptor {
             // 4. 解析 JWT：验证签名和过期时间
             Claims claims = jwtUtils.parseToken(token);
 
-            // 5. 校验令牌类型：仅接受 type=access 的 Access Token，拒绝 Refresh Token 用于 API 认证
+            // 5. 校验令牌类型：仅接受 type=access 的 Access Token
             String type = claims.get("type", String.class);
             if (!"access".equals(type)) {
-                sendJson(response, 401, "{\"code\":401,\"message\":\"invalid token type\"}");
+                sendResult(response, 401, Result.unauthorized("invalid token type"));
                 return false;
             }
 
@@ -81,7 +73,7 @@ public class LoginInterceptor implements HandlerInterceptor {
             // 7. 管理端权限校验：admin 路径仅限 ADMIN 角色访问
             String path = request.getRequestURI();
             if (path.startsWith("/api/v1/admin/") && !"ADMIN".equals(role)) {
-                sendJson(response, 403, "{\"code\":403,\"message\":\"admin access required\"}");
+                sendResult(response, 403, Result.forbidden("admin access required"));
                 return false;
             }
 
@@ -89,7 +81,7 @@ public class LoginInterceptor implements HandlerInterceptor {
             UserContext.set(userId, role);
         } catch (JwtException e) {
             // 9. 令牌解析失败（签名无效或已过期），返回 401
-            sendJson(response, 401, "{\"code\":401,\"message\":\"invalid or expired token\"}");
+            sendResult(response, 401, Result.unauthorized("invalid or expired token"));
             return false;
         }
 
@@ -98,17 +90,16 @@ public class LoginInterceptor implements HandlerInterceptor {
     }
 
     /**
-     * 发送 JSON 格式的错误响应
+     * 发送统一格式的 JSON 错误响应，使用 {@link Result} 类确保响应包含 requestId 和 timestamp 字段。
      *
      * @param response HTTP 响应对象
      * @param status   HTTP 状态码
-     * @param body     JSON 响应体字符串
+     * @param result   Result 对象
      * @throws Exception 写入响应时可能抛出的异常
      */
-    private void sendJson(HttpServletResponse response, int status, String body) throws Exception {
-        // 设置 HTTP 状态码和 Content-Type，写入 JSON 格式的错误响应体
+    private void sendResult(HttpServletResponse response, int status, Result<?> result) throws Exception {
         response.setStatus(status);
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write(body);
+        objectMapper.writeValue(response.getOutputStream(), result);
     }
 }

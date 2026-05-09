@@ -6,8 +6,11 @@ import com.zjw.booknexus.dto.LoginReq;
 import com.zjw.booknexus.dto.LoginResp;
 import com.zjw.booknexus.dto.RefreshReq;
 import com.zjw.booknexus.dto.RegisterReq;
+import com.zjw.booknexus.entity.Notification;
 import com.zjw.booknexus.entity.User;
+import com.zjw.booknexus.enums.NotificationType;
 import com.zjw.booknexus.exception.BusinessException;
+import com.zjw.booknexus.mapper.NotificationMapper;
 import com.zjw.booknexus.mapper.UserMapper;
 import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.zjw.booknexus.sentinel.SentinelRuleInitializer;
@@ -39,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 public class AuthServiceImpl implements AuthService {
 
     private final UserMapper userMapper;
+    private final NotificationMapper notificationMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
     private final RedisTemplate<String, String> redisTemplate;
@@ -56,7 +60,7 @@ public class AuthServiceImpl implements AuthService {
      * @throws BusinessException 当用户名或邮箱已存在时抛出 409 异常
      */
     @Override
-    @SentinelResource(value = "register", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
+    @SentinelResource(value = "register", fallback = "fallbackLoginResp", fallbackClass = SentinelRuleInitializer.class)
     @Transactional(rollbackFor = Exception.class)
     public LoginResp register(RegisterReq req) {
         // 1. 校验用户名唯一性：若已存在则拒绝注册，防止重复用户名
@@ -79,7 +83,10 @@ public class AuthServiceImpl implements AuthService {
         user.setStatus("ENABLED");
         userMapper.insert(user);
 
-        // 4. 注册成功后自动生成令牌对并返回登录响应
+        // 4. 为新注册用户创建欢迎通知
+        createWelcomeNotifications(user.getId());
+
+        // 5. 注册成功后自动生成令牌对并返回登录响应
         return buildLoginResp(user);
     }
 
@@ -97,7 +104,7 @@ public class AuthServiceImpl implements AuthService {
      *         当账户已被禁用时抛出 403 异常
      */
     @Override
-    @SentinelResource(value = "login", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
+    @SentinelResource(value = "login", fallback = "fallbackLoginResp", fallbackClass = SentinelRuleInitializer.class)
     public LoginResp login(LoginReq req) {
         // 1. 根据用户名查询用户是否存在；不存在则返回 401 避免泄露用户是否注册
         User user = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getUsername, req.getUsername()));
@@ -113,7 +120,14 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(401, ErrorCode.INVALID_CREDENTIALS);
         }
 
-        // 4. 校验通过，生成令牌对并返回登录响应
+        // 4. 为新用户（尚无任何通知记录）补发欢迎通知，兼容注册功能上线前的存量用户
+        long notificationCount = notificationMapper.selectCount(
+                new LambdaQueryWrapper<Notification>().eq(Notification::getUserId, user.getId()));
+        if (notificationCount == 0) {
+            createWelcomeNotifications(user.getId());
+        }
+
+        // 5. 校验通过，生成令牌对并返回登录响应
         return buildLoginResp(user);
     }
 
@@ -130,7 +144,7 @@ public class AuthServiceImpl implements AuthService {
      * @throws BusinessException 当刷新令牌无效、已过期、类型不匹配或用户已失效时抛出 401 异常
      */
     @Override
-    @SentinelResource(value = "refresh", fallback = "fallback", fallbackClass = SentinelRuleInitializer.class)
+    @SentinelResource(value = "refresh", fallback = "fallbackLoginResp", fallbackClass = SentinelRuleInitializer.class)
     public LoginResp refresh(RefreshReq req) {
         // 1. 解析 Refresh Token：签名或过期解析失败则判定令牌无效
         Claims claims;
@@ -187,6 +201,48 @@ public class AuthServiceImpl implements AuthService {
         }
         // 2. 转换为不含敏感字段的视图对象返回
         return toVO(user);
+    }
+
+    /**
+     * 用户登出，删除 Redis 中的 Refresh Token。
+     *
+     * @param userId 当前用户 ID
+     */
+    @Override
+    public void logout(Long userId) {
+        redisTemplate.delete("refresh:" + userId);
+    }
+
+    /**
+     * 为新注册（或首次登录的存量）用户创建欢迎通知。
+     * <p>
+     * 自动插入一条欢迎消息和一条系统使用须知，帮助新用户快速了解系统。
+     * 通知类型为 {@link NotificationType#SYSTEM}，初始状态为未读。
+     * </p>
+     *
+     * @param userId 用户 ID
+     */
+    private void createWelcomeNotifications(Long userId) {
+        // 欢迎通知
+        Notification welcome = new Notification();
+        welcome.setUserId(userId);
+        welcome.setType(NotificationType.SYSTEM.name());
+        welcome.setTitle("欢迎加入 BookNexus！");
+        welcome.setContent("尊敬的读者，欢迎您加入 BookNexus 图书管理系统！在这里您可以浏览丰富的图书资源、在线借阅、管理个人书架，享受便捷的阅读体验。如有任何疑问，请查看「系统使用须知」通知或联系管理员。");
+        welcome.setIsRead(0);
+        notificationMapper.insert(welcome);
+
+        // 使用须知
+        Notification guide = new Notification();
+        guide.setUserId(userId);
+        guide.setType(NotificationType.SYSTEM.name());
+        guide.setTitle("系统使用须知");
+        guide.setContent("【借阅规则】每位用户最多同时借阅 5 本图书，每本书默认借期 30 天，可续借 1 次（延长 15 天）。逾期将按 0.10 元/天收取罚金。\n\n"
+                + "【图书搜索】支持按书名、作者、ISBN 搜索图书，也可使用全文搜索功能快速定位所需书籍。\n\n"
+                + "【个人中心】在个人中心可查看借阅记录、收藏图书、管理订阅，以及接收系统通知。\n\n"
+                + "【消息留言】如有建议或问题，欢迎通过留言功能与管理员沟通。");
+        guide.setIsRead(0);
+        notificationMapper.insert(guide);
     }
 
     /**

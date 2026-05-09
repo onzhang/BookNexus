@@ -7,6 +7,9 @@ import com.zjw.booknexus.entity.User;
 import com.zjw.booknexus.mapper.UserMapper;
 import com.zjw.booknexus.utils.UserContext;
 import jakarta.servlet.http.HttpServletRequest;
+import com.zjw.booknexus.dto.LoginReq;
+import com.zjw.booknexus.dto.RegisterReq;
+import com.zjw.booknexus.dto.RefreshReq;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -270,9 +273,12 @@ public class OperationLogAspect {
                     continue;
                 }
                 String className = arg.getClass().getName();
-                // 过滤 Servlet 相关对象和校验结果对象
+                // 过滤 Servlet 相关对象、校验结果对象和包含敏感字段的认证 DTO
                 if (className.startsWith("jakarta.servlet.")
-                        || className.startsWith("org.springframework.validation.")) {
+                        || className.startsWith("org.springframework.validation.")
+                        || arg instanceof com.zjw.booknexus.dto.LoginReq
+                        || arg instanceof com.zjw.booknexus.dto.RegisterReq
+                        || arg instanceof com.zjw.booknexus.dto.RefreshReq) {
                     continue;
                 }
                 params.add(arg);

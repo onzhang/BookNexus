@@ -2,6 +2,7 @@ package com.zjw.booknexus.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -26,6 +27,7 @@ public class RegisterReq {
     /** 密码（必填），长度 6-128 位 */
     @NotBlank(message = "密码不能为空")
     @Size(min = 6, max = 128, message = "密码长度6-128位")
+    @Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*\\d).{6,}$", message = "密码需包含字母和数字，至少6位")
     private String password;
 
     /** 电子邮箱（可选），需符合邮箱格式 */

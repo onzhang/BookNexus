@@ -20,9 +20,9 @@
         :collapse="isCollapse"
         :collapse-transition="false"
         router
-        background-color="#304156"
-        text-color="#bfcbd9"
-        active-text-color="#409EFF"
+        background-color="#4A3728"
+        text-color="#D4C5B2"
+        active-text-color="#C4956A"
       >
         <el-menu-item index="/admin/dashboard">
           <el-icon><Odometer /></el-icon>
@@ -49,7 +49,9 @@
           <template #title>借阅管理</template>
         </el-menu-item>
         <el-menu-item index="/admin/announcements">
-          <el-icon><Bell /></el-icon>
+          <NotificationBadge :count="0">
+            <el-icon><Bell /></el-icon>
+          </NotificationBadge>
           <template #title>公告管理</template>
         </el-menu-item>
         <el-menu-item index="/admin/messages">
@@ -100,11 +102,14 @@ import {
   ChatDotRound
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
+import { useNotificationStore } from '@/stores/notification'
+import NotificationBadge from '@/components/NotificationBadge.vue'
 import { ElMessageBox } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const notificationStore = useNotificationStore()
 
 /** 侧边栏是否折叠 */
 const isCollapse = ref(false)
@@ -137,7 +142,7 @@ async function handleLogout() {
 }
 
 .admin-aside {
-  background-color: var(--sidebar-bg);
+  background-color: #4A3728;
   overflow: hidden;
   transition: width 0.3s;
 
@@ -148,6 +153,7 @@ async function handleLogout() {
     justify-content: center;
     cursor: pointer;
     padding: 0 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 
     .logo-img {
       width: 32px;
@@ -161,6 +167,8 @@ async function handleLogout() {
       font-weight: 700;
       color: #fff;
       white-space: nowrap;
+      font-family: 'Playfair Display', 'Noto Serif SC', serif;
+      letter-spacing: 1px;
     }
   }
 

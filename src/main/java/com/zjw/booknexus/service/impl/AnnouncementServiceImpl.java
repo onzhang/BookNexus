@@ -10,9 +10,16 @@ import com.zjw.booknexus.dto.AnnouncementCreateReq;
 import com.zjw.booknexus.dto.AnnouncementPageReq;
 import com.zjw.booknexus.dto.AnnouncementUpdateReq;
 import com.zjw.booknexus.entity.Announcement;
+import com.zjw.booknexus.entity.Notification;
+import com.zjw.booknexus.entity.User;
+import com.zjw.booknexus.enums.NotificationType;
+import com.zjw.booknexus.enums.UserStatus;
 import com.zjw.booknexus.exception.BusinessException;
 import com.zjw.booknexus.mapper.AnnouncementMapper;
+import com.zjw.booknexus.mapper.NotificationMapper;
+import com.zjw.booknexus.mapper.UserMapper;
 import com.zjw.booknexus.service.AnnouncementService;
+import com.zjw.booknexus.service.NotificationService;
 import com.zjw.booknexus.utils.UserContext;
 import com.zjw.booknexus.vo.AnnouncementVO;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +46,9 @@ import java.util.List;
 public class AnnouncementServiceImpl implements AnnouncementService {
 
     private final AnnouncementMapper announcementMapper;
+    private final UserMapper userMapper;
+    private final NotificationMapper notificationMapper;
+    private final NotificationService notificationService;
 
     /**
      * 分页查询公告。
@@ -101,6 +111,9 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         announcement.setPublisherId(UserContext.getUserId());
 
         announcementMapper.insert(announcement);
+        if (announcement.getIsPublished() == 1) {
+            publishToAllUsers(announcement);
+        }
         return toAnnouncementVO(announcement);
     }
 
@@ -123,6 +136,8 @@ public class AnnouncementServiceImpl implements AnnouncementService {
             throw new BusinessException(404, ErrorCode.ANNOUNCEMENT_NOT_FOUND);
         }
 
+        boolean wasPublished = announcement.getIsPublished() == 1;
+
         if (StrUtil.isNotBlank(req.getTitle())) {
             announcement.setTitle(req.getTitle());
         }
@@ -134,7 +149,13 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         }
 
         announcementMapper.updateById(announcement);
-        return toAnnouncementVO(announcementMapper.selectById(id));
+        Announcement updated = announcementMapper.selectById(id);
+
+        if (!wasPublished && updated.getIsPublished() == 1) {
+            publishToAllUsers(updated);
+        }
+
+        return toAnnouncementVO(updated);
     }
 
     /**
@@ -154,6 +175,26 @@ public class AnnouncementServiceImpl implements AnnouncementService {
             throw new BusinessException(404, ErrorCode.ANNOUNCEMENT_NOT_FOUND);
         }
         announcementMapper.deleteById(id);
+    }
+
+    private void publishToAllUsers(Announcement announcement) {
+        String notifyTitle = "【系统公告】" + announcement.getTitle();
+        Long count = notificationMapper.selectCount(
+                new LambdaQueryWrapper<Notification>()
+                        .eq(Notification::getTitle, notifyTitle));
+        if (count > 0) {
+            log.info("公告 [{}] 已发布过通知，跳过", announcement.getTitle());
+            return;
+        }
+
+        List<User> users = userMapper.selectList(
+                new LambdaQueryWrapper<User>().eq(User::getStatus, UserStatus.ENABLED.name()));
+        log.info("公告 [{}] 开始向 {} 位用户推送通知", announcement.getTitle(), users.size());
+
+        String content = announcement.getContent();
+        for (User user : users) {
+            notificationService.createAndSend(user.getId(), NotificationType.SYSTEM.name(), notifyTitle, content);
+        }
     }
 
     /**

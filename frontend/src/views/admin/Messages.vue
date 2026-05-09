@@ -25,13 +25,13 @@
             <el-tag v-else type="info" size="small">未回复</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="留言时间" width="180" />
-        <el-table-column prop="replyAt" label="回复时间" width="180">
+        <el-table-column prop="createdAt" label="留言时间" width="170" />
+        <el-table-column prop="replyAt" label="回复时间" width="170">
           <template #default="{ row }">
             {{ row.replyAt || '-' }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="openReplyDialog(row)">
               {{ row.reply ? '修改回复' : '回复' }}
@@ -184,14 +184,14 @@ onMounted(() => {
   }
 
   .reply-preview {
-    background: #f5f7fa;
+    background: var(--bg-color);
     padding: 12px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     margin-bottom: 16px;
 
     p {
       margin: 8px 0 0;
-      color: #606266;
+      color: var(--text-regular);
       line-height: 1.6;
     }
   }

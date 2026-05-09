@@ -1,10 +1,11 @@
 /**
- * BookNexus — 全局样式
+ * BookNexus — 全局样式 · 墨韵书斋
  *
- * @description 全局 CSS 重置、自定义 CSS 变量（Element Plus 色系扩展）、
+ * @description 全局 CSS 重置、自定义 CSS 变量（墨韵书斋色系）、
  *              基础标签样式统一。所有 CSS 变量在 :root 中定义，各组件直接引用。
- * @author 张俊文
- * @date 2026-05-01
+ * @design   墨韵书斋 — 宣纸白 / 焦茶棕 / 古铜金 / 墨褐色系
+ * @author   张俊文
+ * @date     2026-05-07
  */
 
 /* ----- 全局重置 ----- */
@@ -20,9 +21,8 @@ html,
 body {
   width: 100%;
   height: 100%;
-  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
-    'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
-  font-size: 14px;
+  font-family: 'Noto Serif SC', 'Lora', 'STSong', 'Songti SC', 'SimSun', '宋体', serif;
+  font-size: 15px;
   color: var(--text-primary);
   background-color: var(--bg-color);
   -webkit-font-smoothing: antialiased;
@@ -32,6 +32,10 @@ body {
 a {
   text-decoration: none;
   color: var(--primary-color);
+  transition: color 0.25s ease;
+}
+a:hover {
+  color: var(--primary-dark);
 }
 
 ul,
@@ -44,32 +48,136 @@ img {
   height: auto;
 }
 
-/* ----- 自定义 CSS 变量（基于 Element Plus 色板） ----- */
+/* ----- 自定义 CSS 变量 · 墨韵书斋色系 ----- */
 :root {
-  --primary-color: #409EFF;
-  --success-color: #67C23A;
-  --warning-color: #E6A23C;
-  --danger-color: #F56C6C;
-  --info-color: #909399;
+  /* ── 主色系 · 焦茶棕 ── */
+  --primary-color: #8B6F47;
+  --primary-light: #A68B62;
+  --primary-dark: #6B5332;
 
-  --text-primary: #303133;
-  --text-regular: #606266;
-  --text-secondary: #909399;
-  --text-placeholder: #C0C4CC;
+  /* ── 强调色 · 古铜金 ── */
+  --accent-color: #C4956A;
+  --accent-light: #D4B896;
+  --accent-bg: rgba(196, 149, 106, 0.08);
 
-  --border-color: #DCDFE6;
-  --bg-color: #F5F7FA;
+  /* ── 背景色系 · 宣纸/墨色 ── */
+  --bg-color: #FAF6F0;
+  --bg-white: #FFFFFF;
+  --bg-card: #FDFAF5;
+  --bg-sidebar: #4A3728;
+  --bg-sidebar-hover: #5D4533;
+  --bg-hero: linear-gradient(175deg, #FDF9F3 0%, #F5EDE0 40%, #EDE0D0 100%);
 
-  --sidebar-bg: #304156;
-  --sidebar-text: #bfcbd9;
-  --sidebar-active: #409EFF;
+  /* ── 文字色系 ── */
+  --text-primary: #2C1810;
+  --text-regular: #5D4037;
+  --text-secondary: #8D6E63;
+  --text-placeholder: #BCAAA4;
+  --text-inverse: #FDFAF5;
+  --text-sidebar: #D4C5B2;
+  --text-sidebar-active: #C4956A;
 
-  --header-bg: #fff;
+  /* ── 边框/分隔 ── */
+  --border-color: #D4C5B2;
+  --border-light: #E8DED0;
+
+  /* ── 状态色 · 自然调色 ── */
+  --success-color: #6B8E23;
+  --success-bg: rgba(107, 142, 35, 0.08);
+  --warning-color: #D4A76A;
+  --warning-bg: rgba(212, 167, 106, 0.08);
+  --danger-color: #C0392B;
+  --danger-bg: rgba(192, 57, 43, 0.08);
+  --info-color: #7B9AAD;
+  --info-bg: rgba(123, 154, 173, 0.08);
+
+  /* ── 布局 ── */
+  --header-bg: #FFFDF9;
   --header-height: 60px;
 
+  --sidebar-bg: #4A3728;
+  --sidebar-text: #D4C5B2;
+  --sidebar-active: #C4956A;
+  --sidebar-active-bg: rgba(196, 149, 106, 0.15);
+
+  /* ── 阴影 · 纸张轻柔感 ── */
+  --shadow-sm: 0 1px 4px rgba(139, 111, 71, 0.06);
+  --shadow-md: 0 2px 12px rgba(139, 111, 71, 0.08);
+  --shadow-lg: 0 8px 30px rgba(139, 111, 71, 0.12);
+
+  /* ── 圆角 ── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+
+  /* ── 间距 ── */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 16px;
   --spacing-lg: 24px;
   --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+
+  /* ── 过渡 ── */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+}
+
+/* ----- Element Plus 主题变量映射 ----- */
+/* 让 EP 组件使用我们的墨韵书斋色系 */
+:root {
+  /* 主色 */
+  --el-color-primary: #8B6F47;
+  --el-color-primary-light-3: #B8A082;
+  --el-color-primary-light-5: #CFC0AB;
+  --el-color-primary-light-7: #E3D8C9;
+  --el-color-primary-light-8: #ECE3D8;
+  --el-color-primary-light-9: #F5F0E8;
+  --el-color-primary-dark-2: #6B5332;
+
+  /* 状态色 */
+  --el-color-success: #6B8E23;
+  --el-color-warning: #D4A76A;
+  --el-color-danger: #C0392B;
+  --el-color-info: #7B9AAD;
+
+  /* 文字 */
+  --el-text-color-primary: #2C1810;
+  --el-text-color-regular: #5D4037;
+  --el-text-color-secondary: #8D6E63;
+  --el-text-color-placeholder: #BCAAA4;
+
+  /* 边框 */
+  --el-border-color: #D4C5B2;
+  --el-border-color-light: #E8DED0;
+  --el-border-color-lighter: #F0E8DC;
+
+  /* 背景 */
+  --el-bg-color: #FFFFFF;
+  --el-bg-color-page: #FAF6F0;
+  --el-bg-color-overlay: #FDFAF5;
+
+  /* 字体 */
+  --el-font-family: 'Noto Serif SC', 'Lora', 'STSong', 'Songti SC', serif;
+
+  /* 圆角 */
+  --el-border-radius-base: 4px;
+  --el-border-radius-small: 2px;
+  --el-border-radius-round: 9999px;
+
+  /* 阴影 */
+  --el-box-shadow-light: 0 2px 12px rgba(139, 111, 71, 0.08);
+}
+
+/* ----- 纸质纹理背景（全局可选） ----- */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity: 0.6;
 }

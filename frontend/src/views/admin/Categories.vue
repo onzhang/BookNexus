@@ -25,7 +25,6 @@
           </template>
         </el-input>
         <el-button type="primary" @click="handleSearch">搜索</el-button>
-        <el-button @click="resetSearch">重置</el-button>
         <el-button type="success" style="margin-left: auto" @click="openCreateDialog">新增分类</el-button>
       </div>
     </el-card>
@@ -42,14 +41,14 @@
         default-expand-all
       >
         <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="name" label="分类名称" min-width="160" />
+        <el-table-column prop="name" label="分类名称" min-width="180" />
         <el-table-column prop="parentName" label="父分类" width="140">
           <template #default="{ row }">
             {{ row.parentName || (row.parentId === 0 ? '顶级分类' : '-') }}
           </template>
         </el-table-column>
         <el-table-column prop="sortOrder" label="排序" width="80" />
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="openEditDialog(row)">编辑</el-button>
             <el-button type="danger" link @click="handleDelete(row)">删除</el-button>

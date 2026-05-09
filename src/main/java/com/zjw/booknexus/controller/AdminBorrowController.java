@@ -46,6 +46,36 @@ public class AdminBorrowController {
     }
 
     /**
+     * 管理员审批借阅申请接口。
+     * <p>
+     * PUT /api/v1/admin/borrows/{id}/approve
+     * 管理员审批用户的借阅申请，通过后记录状态变为 BORROWED 并扣减库存。
+     * </p>
+     *
+     * @param id 借阅记录 ID
+     * @return 更新后的借阅记录详细信息统一响应
+     */
+    @PutMapping("/{id}/approve")
+    public Result<BorrowRecordVO> approveBorrow(@PathVariable Long id) {
+        return Result.success(borrowService.approveBorrow(id));
+    }
+
+    /**
+     * 管理员确认归还图书接口。
+     * <p>
+     * PUT /api/v1/admin/borrows/{id}/confirm-return
+     * 管理员确认用户归还的图书已入库，记录状态变为 RETURNED 并恢复库存。
+     * </p>
+     *
+     * @param id 借阅记录 ID
+     * @return 更新后的借阅记录详细信息统一响应
+     */
+    @PutMapping("/{id}/confirm-return")
+    public Result<BorrowRecordVO> confirmReturn(@PathVariable Long id) {
+        return Result.success(borrowService.confirmReturn(id));
+    }
+
+    /**
      * 管理员强制归还图书接口。
      * <p>
      * PUT /api/v1/admin/borrows/{id}/return

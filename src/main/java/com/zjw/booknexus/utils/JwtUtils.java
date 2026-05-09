@@ -27,6 +27,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -35,15 +36,34 @@ import java.util.Date;
 @Component
 public class JwtUtils {
 
-    /** HMAC-SHA256 签名密钥（生产环境应通过配置注入） */
-    private static final String SECRET = "booknexus-jwt-secret-key-2026-very-long-secure-key!!";
     /** Access Token 过期时间：30 分钟 */
     private static final long ACCESS_EXPIRE = 30 * 60 * 1000L;
     /** Refresh Token 过期时间：7 天 */
     private static final long REFRESH_EXPIRE = 7 * 24 * 60 * 60 * 1000L;
 
-    /** HMAC-SHA256 密钥对象 */
-    private final SecretKey secretKey = Keys.hmacShaKeyFor(SECRET.getBytes());
+    /** HMAC-SHA256 签名密钥，通过配置注入，生产环境应使用环境变量覆盖 */
+    @Value("${jwt.secret}")
+    private String secret;
+
+    /** HMAC-SHA256 密钥对象（延迟初始化） */
+    private volatile SecretKey secretKey;
+
+    /**
+     * 获取 HMAC-SHA256 密钥对象（双重检查锁延迟初始化）。
+     * 密钥从配置属性 {@code jwt.secret} 注入，避免硬编码在源码中。
+     *
+     * @return SecretKey 实例
+     */
+    private SecretKey getSecretKey() {
+        if (secretKey == null) {
+            synchronized (this) {
+                if (secretKey == null) {
+                    secretKey = Keys.hmacShaKeyFor(secret.getBytes());
+                }
+            }
+        }
+        return secretKey;
+    }
 
     /**
      * 生成 Access Token
@@ -61,7 +81,7 @@ public class JwtUtils {
                 .claim("type", "access")
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + ACCESS_EXPIRE))
-                .signWith(secretKey)
+                .signWith(getSecretKey())
                 .compact();
     }
 
@@ -81,7 +101,7 @@ public class JwtUtils {
                 .claim("type", "refresh")
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + REFRESH_EXPIRE))
-                .signWith(secretKey)
+                .signWith(getSecretKey())
                 .compact();
     }
 
@@ -95,7 +115,7 @@ public class JwtUtils {
      */
     public Claims parseToken(String token) {
         return Jwts.parser()
-                .verifyWith(secretKey)
+                .verifyWith(getSecretKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

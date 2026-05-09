@@ -10,6 +10,7 @@ import com.zjw.booknexus.entity.Notification;
 import com.zjw.booknexus.exception.BusinessException;
 import com.zjw.booknexus.mapper.NotificationMapper;
 import com.zjw.booknexus.service.NotificationService;
+import com.zjw.booknexus.service.SseEmitterManager;
 import com.zjw.booknexus.utils.UserContext;
 import com.zjw.booknexus.vo.NotificationVO;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ import java.util.List;
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationMapper notificationMapper;
+    private final SseEmitterManager sseEmitterManager;
 
     /**
      * 分页查询当前用户的通知列表。
@@ -88,6 +90,38 @@ public class NotificationServiceImpl implements NotificationService {
         }
         notification.setIsRead(1);
         notificationMapper.updateById(notification);
+    }
+
+    /**
+     * 创建通知并实时推送给指定用户。
+     * <p>
+     * 构造通知实体并写入数据库，随后转换为视图对象并通过 SSE 推送。
+     * 事务保证数据库写入的原子性，推送失败不影响入库结果。
+     * </p>
+     *
+     * @param userId  接收通知的用户 ID
+     * @param type    通知类型
+     * @param title   通知标题
+     * @param content 通知内容
+     * @return 创建后的通知视图对象
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public NotificationVO createAndSend(Long userId, String type, String title, String content) {
+        Notification notification = new Notification();
+        notification.setUserId(userId);
+        notification.setType(type);
+        notification.setTitle(title);
+        notification.setContent(content);
+        notification.setIsRead(0);
+
+        notificationMapper.insert(notification);
+        log.info("已为用户 [{}] 创建通知: {}", userId, title);
+
+        NotificationVO vo = toNotificationVO(notification);
+        sseEmitterManager.sendNotification(userId, vo);
+
+        return vo;
     }
 
     /**

@@ -90,6 +90,32 @@ public interface BorrowService {
     PageResult<BorrowRecordVO> adminPage(AdminBorrowPageReq req);
 
     /**
+     * 管理员审批借阅申请。
+     * <p>
+     * 将指定借阅记录从 PENDING 状态更新为 BORROWED，
+     * 并扣减对应图书的可用库存。若库存降为 0 则更新图书状态。
+     * </p>
+     *
+     * @param recordId 借阅记录 ID
+     * @return 更新后的借阅记录视图对象
+     * @throws com.zjw.booknexus.exception.BusinessException 当记录不存在或状态不合法时抛出
+     */
+    BorrowRecordVO approveBorrow(Long recordId);
+
+    /**
+     * 管理员确认归还图书。
+     * <p>
+     * 将指定借阅记录从 RETURN_PENDING 状态更新为 RETURNED，
+     * 计算逾期罚金，并恢复对应图书的可用库存。
+     * </p>
+     *
+     * @param recordId 借阅记录 ID
+     * @return 更新后的借阅记录视图对象
+     * @throws com.zjw.booknexus.exception.BusinessException 当记录不存在或状态不合法时抛出
+     */
+    BorrowRecordVO confirmReturn(Long recordId);
+
+    /**
      * 管理员强制归还图书。
      * <p>
      * 管理员可绕过用户身份校验直接强制归还指定借阅记录的图书，

@@ -227,7 +227,7 @@ onMounted(() => {
       align-items: center;
       justify-content: center;
       height: 200px;
-      background-color: #f5f7fa;
+      background-color: var(--bg-card);
       border-radius: 8px;
       overflow: hidden;
       margin-bottom: 12px;

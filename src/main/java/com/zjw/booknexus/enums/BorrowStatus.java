@@ -33,6 +33,8 @@ public enum BorrowStatus {
     BORROWED("借阅中"),
     /** 已续借 — 用户已申请续借并成功延长归还期限 */
     RENEWED("已续借"),
+    /** 待归还确认 — 用户已归还图书，等待管理员确认入库 */
+    RETURN_PENDING("待归还确认"),
     /** 已归还 — 图书已归还入库，借阅流程结束 */
     RETURNED("已归还");
 

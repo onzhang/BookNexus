@@ -12,6 +12,22 @@
 </template>
 
 <script setup lang="ts">
+import { watch } from 'vue'
+import { useUserStore } from '@/stores/user'
+import { useNotification } from '@/composables/useNotification'
+
+const userStore = useUserStore()
+const { connect, disconnect } = useNotification()
+
+watch(() => userStore.isLoggedIn, (loggedIn) => {
+  if (loggedIn) {
+    console.log('[App] 用户已登录，建立 SSE 连接')
+    connect()
+  } else {
+    console.log('[App] 用户已登出，断开 SSE 连接')
+    disconnect()
+  }
+}, { immediate: true })
 </script>
 
 <style>

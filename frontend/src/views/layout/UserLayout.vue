@@ -19,9 +19,9 @@
         :collapse="isCollapse"
         :collapse-transition="false"
         router
-        background-color="#304156"
-        text-color="#bfcbd9"
-        active-text-color="#409EFF"
+        background-color="#4A3728"
+        text-color="#D4C5B2"
+        active-text-color="#C4956A"
       >
         <el-menu-item index="/user/home">
           <el-icon><HomeFilled /></el-icon>
@@ -36,7 +36,9 @@
           <template #title>我的收藏</template>
         </el-menu-item>
         <el-menu-item index="/user/notifications">
-          <el-icon><Bell /></el-icon>
+          <NotificationBadge :count="notificationStore.unreadCount">
+            <el-icon><Bell /></el-icon>
+          </NotificationBadge>
           <template #title>我的通知</template>
         </el-menu-item>
         <el-menu-item index="/user/messages">
@@ -85,6 +87,14 @@
       <el-main class="user-main">
         <router-view />
       </el-main>
+
+      <!-- 通知弹窗队列 -->
+      <NotificationPopup
+        :notifications="notificationStore.popupQueue"
+        :visible="notificationStore.popupQueue.length > 0"
+        @close="(id) => notificationStore.removeFromQueue(id)"
+        @click="(id) => handlePopupClick(id)"
+      />
     </el-container>
   </el-container>
 </template>
@@ -94,11 +104,15 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { HomeFilled, Document, Star, User, Bell, ChatDotRound, Expand, Fold } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
+import { useNotificationStore } from '@/stores/notification'
 import { ElMessageBox } from 'element-plus'
+import NotificationBadge from '@/components/NotificationBadge.vue'
+import NotificationPopup from '@/components/NotificationPopup.vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const notificationStore = useNotificationStore()
 
 /** 侧边栏是否折叠 */
 const isCollapse = ref(false)
@@ -125,6 +139,15 @@ async function handleLogout() {
   userStore.logout()
   router.push('/login')
 }
+
+/**
+ * 处理通知弹窗点击事件
+ * @param id 通知ID
+ */
+function handlePopupClick(id: number) {
+  notificationStore.removeFromQueue(id)
+  router.push('/user/notifications')
+}
 </script>
 
 <style scoped lang="scss">
@@ -133,7 +156,7 @@ async function handleLogout() {
 }
 
 .user-aside {
-  background-color: var(--sidebar-bg);
+  background-color: #4A3728;
   overflow: hidden;
   transition: width 0.3s;
 
@@ -144,12 +167,15 @@ async function handleLogout() {
     justify-content: center;
     cursor: pointer;
     padding: 0 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 
     .logo-text {
       font-size: 20px;
       font-weight: 700;
       color: #fff;
       white-space: nowrap;
+      font-family: 'Playfair Display', 'Noto Serif SC', serif;
+      letter-spacing: 1px;
     }
   }
 

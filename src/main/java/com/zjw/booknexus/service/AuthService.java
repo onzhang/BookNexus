@@ -68,4 +68,15 @@ public interface AuthService {
      * @throws com.zjw.booknexus.exception.BusinessException 当用户不存在时抛出
      */
     UserVO getCurrentUser(Long userId);
+
+    /**
+     * 用户登出。
+     * <p>
+     * 删除 Redis 中存储的 Refresh Token，使该用户的 Refresh Token 失效。
+     * Access Token 在其自然过期前仍然有效（30分钟窗口期）。
+     * </p>
+     *
+     * @param userId 当前用户 ID
+     */
+    void logout(Long userId);
 }

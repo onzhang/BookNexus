@@ -31,12 +31,14 @@ public class BookBorrowConsumer {
     @RabbitListener(queues = RabbitMQConfig.BORROW_QUEUE)
     public void handleBorrow(Map<String, Object> message) {
         log.info("收到借阅异步消息: {}", message);
-
-        Long userId = extractLong(message, "userId");
-        Long bookId = extractLong(message, "bookId");
-
-        // TODO: 可扩展借阅统计、积分奖励、发送系统通知等异步逻辑
-        log.info("借阅异步处理完成，userId={}，bookId={}", userId, bookId);
+        try {
+            Long userId = extractLong(message, "userId");
+            Long bookId = extractLong(message, "bookId");
+            // TODO: 可扩展借阅统计、积分奖励、发送系统通知等异步逻辑
+            log.info("借阅异步处理完成，userId={}，bookId={}", userId, bookId);
+        } catch (Exception e) {
+            log.error("借阅异步消息处理失败，消息={}，错误：{}", message, e.getMessage(), e);
+        }
     }
 
     private Long extractLong(Map<String, Object> map, String key) {

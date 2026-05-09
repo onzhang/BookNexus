@@ -16,7 +16,9 @@ import com.alibaba.csp.sentinel.slots.block.degrade.DegradeRuleManager;
 import com.alibaba.csp.sentinel.slots.block.degrade.circuitbreaker.CircuitBreakerStrategy;
 import com.alibaba.csp.sentinel.slots.block.flow.FlowRule;
 import com.alibaba.csp.sentinel.slots.block.flow.FlowRuleManager;
+import com.zjw.booknexus.common.PageResult;
 import com.zjw.booknexus.common.Result;
+import com.zjw.booknexus.dto.LoginResp;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -178,5 +180,29 @@ public class SentinelRuleInitializer {
     public static Result<Void> fallback(BlockException ex) {
         log.warn("[Sentinel] 请求被限流或熔断: {}", ex.getRule().getResource());
         return Result.tooManyRequests("请求过于频繁，请稍后再试");
+    }
+
+    /**
+     * 分页查询降级 fallback — 返回空分页结果
+     */
+    public static <T> PageResult<T> fallbackPageResult(BlockException ex) {
+        log.warn("[Sentinel] 分页请求被限流或熔断: {}", ex.getRule().getResource());
+        return new PageResult<>(java.util.Collections.emptyList(), 0, 1, 10);
+    }
+
+    /**
+     * 单个对象降级 fallback — 返回 null，由 Controller 层转换为 429 响应
+     */
+    public static <T> T fallbackObject(BlockException ex) {
+        log.warn("[Sentinel] 请求被限流或熔断: {}", ex.getRule().getResource());
+        return null;
+    }
+
+    /**
+     * 登录/刷新令牌降级 fallback — 返回 null
+     */
+    public static LoginResp fallbackLoginResp(BlockException ex) {
+        log.warn("[Sentinel] 认证请求被限流或熔断: {}", ex.getRule().getResource());
+        return null;
     }
 }

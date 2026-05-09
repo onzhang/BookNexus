@@ -52,13 +52,23 @@ request.interceptors.response.use(
     return response
   },
   (error) => {
-    if (error.response?.status === 401) {
+    const status = error.response?.status
+    const backendMsg = error.response?.data?.message
+    if (status === 401) {
       localStorage.removeItem(TOKEN_KEY)
       localStorage.removeItem('booknexus_user')
       window.location.href = '/login'
       ElMessage.error('登录已过期，请重新登录')
+    } else if (status === 400) {
+      ElMessage.error(backendMsg || '请求参数错误')
+    } else if (status === 404) {
+      ElMessage.error(backendMsg || '资源不存在')
+    } else if (status === 409) {
+      ElMessage.error(backendMsg || '操作冲突')
+    } else if (status === 500) {
+      ElMessage.error(backendMsg || '服务器内部错误')
     } else {
-      ElMessage.error(error.message || '网络错误')
+      ElMessage.error(backendMsg || error.message || '网络错误')
     }
     return Promise.reject(error)
   }

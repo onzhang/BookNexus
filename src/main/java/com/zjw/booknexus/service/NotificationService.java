@@ -35,4 +35,19 @@ public interface NotificationService {
      * @throws com.zjw.booknexus.exception.BusinessException 当通知不存在或不属于当前用户时抛出
      */
     void markAsRead(Long id, Long userId);
+
+    /**
+     * 创建通知并实时推送给指定用户。
+     * <p>
+     * 将通知持久化到数据库，然后通过 SSE 推送给在线用户。
+     * 若用户当前无活跃连接，通知仅入库不推送。
+     * </p>
+     *
+     * @param userId  接收通知的用户 ID
+     * @param type    通知类型（如 SYSTEM、SUBSCRIPTION、OVERDUE）
+     * @param title   通知标题
+     * @param content 通知内容
+     * @return 创建后的通知视图对象
+     */
+    NotificationVO createAndSend(Long userId, String type, String title, String content);
 }

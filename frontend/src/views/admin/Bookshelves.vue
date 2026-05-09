@@ -24,7 +24,6 @@
           </template>
         </el-input>
         <el-button type="primary" @click="handleSearch">搜索</el-button>
-        <el-button @click="resetSearch">重置</el-button>
         <el-button type="success" style="margin-left: auto" @click="openCreateDialog">新增书架</el-button>
       </div>
     </el-card>
@@ -33,10 +32,10 @@
     <el-card shadow="hover" class="table-card">
       <el-table :data="bookshelfList" stripe border v-loading="loading" style="width: 100%">
         <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="name" label="书架名称" min-width="160" />
+        <el-table-column prop="name" label="书架名称" min-width="180" />
         <el-table-column prop="location" label="位置" min-width="180" />
         <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="openEditDialog(row)">编辑</el-button>
             <el-button type="danger" link @click="handleDelete(row)">删除</el-button>

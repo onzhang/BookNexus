@@ -40,7 +40,7 @@
           style="width: 100%"
         >
           <el-table-column prop="title" label="标题" min-width="180" />
-          <el-table-column prop="content" label="内容" min-width="240" show-overflow-tooltip />
+          <el-table-column prop="content" label="内容" min-width="240" />
           <el-table-column label="类型" width="120">
             <template #default="{ row }">
               <el-tag :type="typeTagType(row.type)" size="small">
@@ -56,8 +56,16 @@
             </template>
           </el-table-column>
           <el-table-column prop="createdAt" label="通知时间" width="180" />
-          <el-table-column label="操作" width="120" fixed="right">
+          <el-table-column label="操作" width="160" fixed="right">
             <template #default="{ row }">
+              <el-button
+                type="primary"
+                link
+                size="small"
+                @click="handleViewDetail(row)"
+              >
+                查看详情
+              </el-button>
               <el-button
                 v-if="row.isRead === 0"
                 type="primary"
@@ -85,6 +93,12 @@
         </div>
       </template>
     </el-card>
+
+    <!-- 通知详情对话框 -->
+    <el-dialog v-model="detailVisible" title="通知详情" width="560px">
+      <div style="margin-bottom:16px"><strong>{{ selectedNotification?.title }}</strong></div>
+      <div style="color:var(--text-secondary);line-height:1.8">{{ selectedNotification?.content }}</div>
+    </el-dialog>
   </div>
 </template>
 
@@ -107,6 +121,10 @@ const size = ref(10)
 const total = ref(0)
 /** 已读状态筛选 */
 const readFilter = ref<number | ''>('')
+/** 详情对话框是否可见 */
+const detailVisible = ref(false)
+/** 当前选中的通知 */
+const selectedNotification = ref<Notification | null>(null)
 
 /** 通知类型 → 中文文本映射 */
 const typeTextMap: Record<string, string> = {
@@ -166,6 +184,15 @@ function handleFilterChange() {
 }
 
 /**
+ * 查看通知详情
+ * @param row - 通知对象
+ */
+function handleViewDetail(row: Notification) {
+  selectedNotification.value = row
+  detailVisible.value = true
+}
+
+/**
  * 标记通知为已读
  * @param id - 通知 ID
  */
@@ -215,7 +242,7 @@ onMounted(() => {
   }
 
   .read-text {
-    color: #909399;
+    color: var(--text-secondary);
     font-size: 13px;
   }
 }

@@ -35,10 +35,16 @@ public class LogOperationConsumer {
      */
     @RabbitListener(queues = RabbitMQConfig.LOG_QUEUE)
     public void handleLog(OperationLog operationLog) {
-        if (operationLog.getCreatedAt() == null) {
-            operationLog.setCreatedAt(LocalDateTime.now());
+        try {
+            if (operationLog.getCreatedAt() == null) {
+                operationLog.setCreatedAt(LocalDateTime.now());
+            }
+            operationLogMapper.insert(operationLog);
+            log.debug("操作日志已异步写入数据库，operator={}，action={}", operationLog.getOperator(), operationLog.getAction());
+        } catch (Exception e) {
+            log.error("操作日志写入数据库失败，operator={}，action={}，错误：{}",
+                    operationLog.getOperator(), operationLog.getAction(), e.getMessage(), e);
+            // 不抛出异常，避免消息无限重试阻塞队列；异常日志会被死信队列兜底
         }
-        operationLogMapper.insert(operationLog);
-        log.debug("操作日志已异步写入数据库，operator={}，action={}", operationLog.getOperator(), operationLog.getAction());
     }
 }

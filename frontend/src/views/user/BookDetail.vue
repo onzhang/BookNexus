@@ -301,7 +301,7 @@ onMounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #f5f7fa;
+    background-color: var(--bg-card);
     border-radius: 8px;
     overflow: hidden;
 
@@ -346,8 +346,8 @@ onMounted(() => {
     .book-description {
       margin-bottom: 24px;
       padding: 16px;
-      background: #f9fafb;
-      border-radius: 8px;
+      background: var(--bg-color);
+      border-radius: var(--radius-md);
 
       h3 {
         font-size: 15px;
