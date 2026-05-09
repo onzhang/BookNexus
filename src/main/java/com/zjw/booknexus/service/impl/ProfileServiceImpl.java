@@ -67,13 +67,9 @@ public class ProfileServiceImpl implements ProfileService {
             throw new BusinessException(500, "头像上传失败");
         }
 
-        String endpoint = minIOConfig.getEndpoint();
-        String avatarUrl = endpoint.endsWith("/") ? endpoint : endpoint + "/";
-        avatarUrl += minIOConfig.getBucket() + "/" + objectName;
-
-        user.setAvatarUrl(avatarUrl);
+        user.setAvatarUrl(objectName);
         userMapper.updateById(user);
-        return avatarUrl;
+        return "/api/v1/public/files/" + objectName;
     }
 
     @Override
