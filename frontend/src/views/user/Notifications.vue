@@ -40,7 +40,7 @@
           style="width: 100%"
         >
           <el-table-column prop="title" label="标题" min-width="180" />
-          <el-table-column prop="content" label="内容" min-width="240" show-overflow-tooltip />
+          <el-table-column prop="content" label="内容" min-width="240" />
           <el-table-column label="类型" width="120">
             <template #default="{ row }">
               <el-tag :type="typeTagType(row.type)" size="small">
