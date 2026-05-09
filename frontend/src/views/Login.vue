@@ -102,9 +102,14 @@ import { ElMessage } from 'element-plus'
 import { ArrowLeft, User, Lock, Message } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useUserStore } from '@/stores/user'
+import { useNotificationStore } from '@/stores/notification'
+import api from '@/api'
+import { UserAPI } from '@/api/endpoints'
+import type { Notification, PageResult } from '@/types'
 
 const router = useRouter()
 const userStore = useUserStore()
+const notificationStore = useNotificationStore()
 
 const formRef = ref<FormInstance>()
 const loading = ref(false)
@@ -132,6 +137,32 @@ function toggleMode() {
   isRegister.value = !isRegister.value
   formRef.value?.resetFields()
   form.email = ''
+}
+
+/** 新用户欢迎通知弹窗：将两条欢迎通知推送到右上角弹窗队列 */
+async function showWelcomeIfNewUser() {
+  try {
+    const res = await api.get<PageResult<Notification>>(UserAPI.NOTIFICATION_PAGE.path, {
+      params: { isRead: 0, size: 10 }
+    })
+    const notifications = res.data.data?.records ?? []
+    const welcomeNotifs = notifications.filter(
+      (n) => n.type === 'SYSTEM'
+        && (n.title?.includes('欢迎加入') || n.title?.includes('系统使用须知'))
+    )
+    if (welcomeNotifs.length < 2) return
+
+    for (const n of welcomeNotifs) {
+      notificationStore.addToQueue(n)
+      notificationStore.setUnreadCount(notificationStore.unreadCount + 1)
+    }
+    // 并发标记已读
+    await Promise.all(welcomeNotifs.map(n =>
+      api.put(UserAPI.NOTIFICATION_READ(n.id).path).catch(() => {})
+    ))
+  } catch {
+    // 非关键流程，失败静默
+  }
 }
 
 onMounted(() => {
@@ -166,6 +197,8 @@ const handleSubmit = async () => {
       })
       ElMessage.success('登录成功')
     }
+    // 检查新用户欢迎通知，推送到右上角弹窗
+    showWelcomeIfNewUser()
     router.push(userStore.isAdmin ? '/admin/dashboard' : '/user/home')
   } catch {
     // Error already shown by interceptor
