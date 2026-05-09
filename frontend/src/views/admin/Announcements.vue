@@ -88,12 +88,13 @@
         <el-form-item label="内容" prop="content">
           <el-input v-model="form.content" type="textarea" :rows="6" />
         </el-form-item>
-        <el-form-item label="发布状态">
+        <el-form-item v-if="isEdit" label="发布状态">
           <el-radio-group v-model="form.isPublished">
             <el-radio :label="0">草稿</el-radio>
             <el-radio :label="1">已发布</el-radio>
           </el-radio-group>
         </el-form-item>
+        <div v-else class="form-tip">新增公告默认为草稿，发布请使用表格中的「发布」按钮</div>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -295,6 +296,12 @@ onMounted(() => {
     display: flex;
     justify-content: flex-end;
     margin-top: 20px;
+  }
+
+  .form-tip {
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding: 6px 0 6px 100px;
   }
 }
 </style>
