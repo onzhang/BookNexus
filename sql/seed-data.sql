@@ -33,17 +33,17 @@ INSERT IGNORE INTO `user` (`id`, `username`, `password`, `email`, `phone`, `role
 -- ============================================================
 INSERT IGNORE INTO `book` (`id`, `title`, `author`, `isbn`, `publisher`, `publish_date`, `description`, `cover_url`, `stock`, `available_stock`, `status`, `bookshelf_id`) VALUES
 -- 书架 1（ID 1-5）
-(1,  '活着',            '余华',                    '978-7-02-013281-8',  '作家出版社',           '2012-01-01', '讲述了一个普通人在历史洪流中历经苦难、顽强生存的故事，深刻展现了生命的韧性与意义。',           '/covers/活着.svg',            5, 5, 'AVAILABLE', 1),
-(2,  '百年孤独',        '加西亚·马尔克斯',          '978-7-5442-5399-4',  '南海出版公司',         '2011-01-01', '魔幻现实主义经典之作，讲述了布恩迪亚家族七代人的兴衰传奇。',                                   '/covers/百年孤独.jpg',        1, 1, 'AVAILABLE', 1),
+(1,  '活着',            '余华',                    '978-7-02-013281-8',  '作家出版社',           '2012-01-01', '讲述了一个普通人在历史洪流中历经苦难、顽强生存的故事，深刻展现了生命的韧性与意义。',           '/covers/活着.svg',            5, 4, 'AVAILABLE', 1),
+(2,  '百年孤独',        '加西亚·马尔克斯',          '978-7-5442-5399-4',  '南海出版公司',         '2011-01-01', '魔幻现实主义经典之作，讲述了布恩迪亚家族七代人的兴衰传奇。',                                   '/covers/百年孤独.jpg',        1, 0, 'BORROWED', 1),
 (3,  '红楼梦',          '曹雪芹',                  '978-7-02-000220-7',  '人民文学出版社',        '2018-01-01', '中国古典文学巅峰之作，以贾宝玉与林黛玉的爱情悲剧为主线，描绘了大家族的兴衰。',                 '/covers/红楼梦.svg',          1, 1, 'AVAILABLE', 1),
-(4,  '围城',            '钱钟书',                  '978-7-02-002475-9',  '人民文学出版社',        '2017-01-01', '以幽默讽刺的笔触描写了知识分子方鸿渐在爱情与事业中的围城困境。',                               '/covers/围城.jpg',            1, 1, 'AVAILABLE', 1),
+(4,  '围城',            '钱钟书',                  '978-7-02-002475-9',  '人民文学出版社',        '2017-01-01', '以幽默讽刺的笔触描写了知识分子方鸿渐在爱情与事业中的围城困境。',                               '/covers/围城.jpg',            1, 0, 'BORROWED', 1),
 (5,  '平凡的世界',      '路遥',                    '978-7-5302-0955-4',  '北京十月文艺出版社',    '2012-01-01', '以孙少安和孙少平两兄弟的奋斗历程，展现了中国改革开放初期普通人的命运变迁。',                   '/covers/平凡的世界.jpg',      1, 1, 'AVAILABLE', 1),
 -- 书架 2（ID 6-10）
-(6,  '三体',            '刘慈欣',                  '978-7-5366-6163-4',  '重庆出版社',           '2008-01-01', '讲述人类文明与三体文明之间的首次接触，开启了一段宏大的宇宙史诗。',                             '/covers/三体.svg',            5, 5, 'AVAILABLE', 2),
+(6,  '三体',            '刘慈欣',                  '978-7-5366-6163-4',  '重庆出版社',           '2008-01-01', '讲述人类文明与三体文明之间的首次接触，开启了一段宏大的宇宙史诗。',                             '/covers/三体.svg',            5, 2, 'AVAILABLE', 2),
 (7,  '三体II：黑暗森林', '刘慈欣',                  '978-7-5366-6641-9',  '重庆出版社',           '2008-01-01', '三体系列第二部，揭示了宇宙文明的黑暗森林法则。',                                               '/covers/三体II：黑暗森林.svg', 1, 1, 'AVAILABLE', 2),
 (8,  '三体III：死神永生', '刘慈欣',                 '978-7-5366-6936-6',  '重庆出版社',           '2010-01-01', '三体系列最终章，探讨了宇宙的终极命运与文明的存亡。',                                           '/covers/三体III：死神永生.svg', 1, 1, 'AVAILABLE', 2),
 (9,  '白夜行',          '东野圭吾',                 '978-7-5442-9114-9',  '南海出版公司',         '2013-01-01', '一桩命案牵出两个孩子的悲惨命运，揭示了人性深处的光明与黑暗。',                                 '/covers/白夜行.svg',          1, 1, 'AVAILABLE', 2),
-(10, '小王子',          '安托万·德·圣-埃克苏佩里',  '978-7-02-013918-3',  '人民文学出版社',        '2018-01-01', '一个来自外星球的小王子的奇妙旅行，关于爱与责任的心灵寓言。',                                   '/covers/小王子.svg',          1, 1, 'AVAILABLE', 2),
+(10, '小王子',          '安托万·德·圣-埃克苏佩里',  '978-7-02-013918-3',  '人民文学出版社',        '2018-01-01', '一个来自外星球的小王子的奇妙旅行，关于爱与责任的心灵寓言。',                                   '/covers/小王子.svg',          1, 0, 'BORROWED', 2),
 -- 书架 3（ID 11-15）
 (11, '月亮与六便士',    '毛姆',                    '978-7-5327-7806-0',  '上海译文出版社',        '2018-01-01', '以画家高更为原型，讲述了一个中年男人为追求艺术梦想抛弃一切的动人故事。',                       '/covers/月亮与六便士.svg',    1, 1, 'AVAILABLE', 3),
 (12, '人间失格',        '太宰治',                  '978-7-5063-9823-0',  '作家出版社',           '2015-01-01', '太宰治半自传体小说，描绘了主人公在人间挣扎求存的悲剧人生。',                                   '/covers/人间失格.svg',        1, 1, 'AVAILABLE', 3),
@@ -69,8 +69,8 @@ INSERT IGNORE INTO `book` (`id`, `title`, `author`, `isbn`, `publisher`, `publis
 (29, '看见',            '柴静',                    '978-7-5633-0249-X',  '广西师范大学出版社',    '2013-01-01', '前央视记者柴静的自传性作品，记录了中国社会十年间的重大事件与个人思考。',                       '/covers/看见.svg',            1, 1, 'AVAILABLE', 6),
 (30, '送你一颗子弹',    '刘瑜',                    '978-7-5426-2586-8',  '上海三联书店',         '2010-01-01', '刘瑜的随笔集，以幽默犀利的笔触探讨社会、文化与生活。',                                         '/covers/送你一颗子弹.svg',    1, 1, 'AVAILABLE', 6),
 -- 书架 7（ID 31-35）
-(31, 'Clean Code',                     'Robert C. Martin',                 '978-0-13-235088-4',  'Prentice Hall',   '2008-01-01', 'A landmark book in software engineering, teaching developers how to write clean, maintainable, and efficient code.',         '/covers/Clean Code.jpg',                  5, 5, 'AVAILABLE', 7),
-(32, 'Design Patterns',                'Erich Gamma et al.',              '978-0-201-63361-0',  'Addison-Wesley',  '1994-01-01', 'The classic reference for object-oriented design patterns, cataloging 23 proven solutions to common software design problems.', '/covers/Design Patterns.jpg',             5, 5, 'AVAILABLE', 7),
+(31, 'Clean Code',                     'Robert C. Martin',                 '978-0-13-235088-4',  'Prentice Hall',   '2008-01-01', 'A landmark book in software engineering, teaching developers how to write clean, maintainable, and efficient code.',         '/covers/Clean Code.jpg',                  5, 4, 'AVAILABLE', 7),
+(32, 'Design Patterns',                'Erich Gamma et al.',              '978-0-201-63361-0',  'Addison-Wesley',  '1994-01-01', 'The classic reference for object-oriented design patterns, cataloging 23 proven solutions to common software design problems.', '/covers/Design Patterns.jpg',             5, 4, 'AVAILABLE', 7),
 (33, 'The Pragmatic Programmer',       'David Thomas, Andrew Hunt',       '978-0-13-595705-9',  'Addison-Wesley',  '2019-01-01', 'A guide to becoming a better programmer through practical advice on software craftsmanship and career development.',            '/covers/The Pragmatic Programmer.jpg',    1, 1, 'AVAILABLE', 7),
 (34, 'Refactoring',                    'Martin Fowler',                   '978-0-13-475759-9',  'Addison-Wesley',  '2018-01-01', 'A comprehensive guide to improving existing codebases through safe and systematic refactoring techniques.',                       '/covers/Refactoring.jpg',                 1, 1, 'AVAILABLE', 7),
 (35, 'Introduction to Algorithms',     'Thomas H. Cormen et al.',         '978-0-262-03384-8',  'MIT Press',       '2009-01-01', 'The definitive textbook on algorithms and data structures, covering fundamental to advanced topics in computer science.',         '/covers/Introduction to Algorithms.jpg',  1, 1, 'AVAILABLE', 7),
@@ -82,7 +82,7 @@ INSERT IGNORE INTO `book` (`id`, `title`, `author`, `isbn`, `publisher`, `publis
 (40, 'Database System Concepts',                         'Abraham Silberschatz et al.',  '978-0-07-802215-9',  'McGraw-Hill',    '2019-01-01', 'A thorough introduction to database systems, covering relational models, SQL, storage, indexing, and transaction processing.',      '/covers/Database System Concepts.jpg',     1, 1, 'AVAILABLE', 8),
 -- 书架 9（ID 41-45）
 (41, 'To Kill a Mockingbird',  'Harper Lee',            '978-0-06-112008-4',  'HarperCollins',    '2006-01-01', 'A powerful story of racial injustice and moral growth in the American South, told through the eyes of young Scout Finch.',       '/covers/To Kill a Mockingbird.jpg',  1, 1, 'AVAILABLE', 9),
-(42, '1984',                   'George Orwell',          '978-0-451-52493-5',  'Signet Classics',  '1961-01-01', 'A dystopian masterpiece depicting a totalitarian world where independent thought is suppressed and history is rewritten.',        '/covers/1984.svg',                    5, 5, 'AVAILABLE', 9),
+(42, '1984',                   'George Orwell',          '978-0-451-52493-5',  'Signet Classics',  '1961-01-01', 'A dystopian masterpiece depicting a totalitarian world where independent thought is suppressed and history is rewritten.',        '/covers/1984.svg',                    5, 4, 'AVAILABLE', 9),
 (43, 'Animal Farm',            'George Orwell',          '978-0-451-52634-2',  'Signet Classics',  '1996-01-01', 'A satirical allegory about a group of farm animals who overthrow their human farmer, only to be ruled by more oppressive pigs.',  '/covers/Animal Farm.jpg',             1, 1, 'AVAILABLE', 9),
 (44, 'The Great Gatsby',       'F. Scott Fitzgerald',    '978-0-7432-7356-5',  'Scribner',         '2004-01-01', 'A story of wealth, love, and the American Dream set in the Roaring Twenties, centered on the mysterious Jay Gatsby.',             '/covers/The Great Gatsby.svg',        1, 1, 'AVAILABLE', 9),
 (45, 'Pride and Prejudice',    'Jane Austen',            '978-0-14-143951-8',  'Penguin Classics', '2002-01-01', 'A timeless romance exploring manners, marriage, and social class in 19th-century England.',                                        '/covers/Pride and Prejudice.jpg',     1, 1, 'AVAILABLE', 9),
@@ -217,27 +217,9 @@ INSERT IGNORE INTO `borrow_record` (`user_id`, `book_id`, `borrow_date`, `due_da
 (2, 41, DATE_SUB(CURDATE(), INTERVAL 85 DAY), DATE_SUB(CURDATE(), INTERVAL 55 DAY), DATE_SUB(CURDATE(), INTERVAL 52 DAY), 'RETURNED', NULL, 0, 0.00);
 
 -- ============================================================
--- 库存更新：根据当前在借记录（BORROWED / RENEWED / APPROVED）修正库存
--- available_stock = stock - 当前在借数
--- 在借数降至 0 时同步更新 status → BORROWED
--- 不修改 DAMAGED(Sapiens, ID=48) / LOST(Outliers, ID=49)
+-- 库存说明：各 book INSERT 中的 available_stock 已根据当前在借
+-- 记录（BORROWED/RENEWED/APPROVED）正确设置，无需另行修正
 -- ============================================================
--- Book ID:6 (三体) 3 条在借（rec5 BORROWED, rec9 BORROWED, rec12 RENEWED），stock=5 → available_stock=2
-UPDATE `book` SET `available_stock` = 2, `status` = 'AVAILABLE' WHERE `id` = 6;
--- Book ID:1 (活着) 1 条在借（rec10 BORROWED），stock=5 → available_stock=4
-UPDATE `book` SET `available_stock` = 4, `status` = 'AVAILABLE' WHERE `id` = 1;
--- Book ID:31 (Clean Code) 1 条在借（rec6 BORROWED），stock=5 → available_stock=4
-UPDATE `book` SET `available_stock` = 4, `status` = 'AVAILABLE' WHERE `id` = 31;
--- Book ID:32 (Design Patterns) 1 条在借（rec11 RENEWED），stock=5 → available_stock=4
-UPDATE `book` SET `available_stock` = 4, `status` = 'AVAILABLE' WHERE `id` = 32;
--- Book ID:42 (1984) 1 条在借（rec7 BORROWED），stock=5 → available_stock=4
-UPDATE `book` SET `available_stock` = 4, `status` = 'AVAILABLE' WHERE `id` = 42;
--- Book ID:2 (百年孤独) 1 条在借（rec3 APPROVED），stock=1 → available_stock=0 → BORROWED
-UPDATE `book` SET `available_stock` = 0, `status` = 'BORROWED' WHERE `id` = 2;
--- Book ID:4 (围城) 1 条在借（rec4 APPROVED），stock=1 → available_stock=0 → BORROWED
-UPDATE `book` SET `available_stock` = 0, `status` = 'BORROWED' WHERE `id` = 4;
--- Book ID:10 (小王子) 1 条在借（rec8 BORROWED），stock=1 → available_stock=0 → BORROWED
-UPDATE `book` SET `available_stock` = 0, `status` = 'BORROWED' WHERE `id` = 10;
 
 -- ============================================================
 -- 5. 用户收藏数据（20 条）
