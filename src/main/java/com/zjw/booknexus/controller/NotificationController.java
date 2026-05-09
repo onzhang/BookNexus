@@ -4,6 +4,7 @@ import com.zjw.booknexus.common.PageResult;
 import com.zjw.booknexus.common.Result;
 import com.zjw.booknexus.dto.NotificationPageReq;
 import com.zjw.booknexus.service.NotificationService;
+import com.zjw.booknexus.utils.UserContext;
 import com.zjw.booknexus.vo.NotificationVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -55,10 +56,21 @@ public class NotificationController {
      * @param id 通知 ID
      * @return 统一成功响应
      */
+    /**
+     * 查询未读通知数量接口。
+     * <p>
+     * GET /api/v1/user/notifications/unread-count
+     * 返回当前用户的未读通知总数，供前端红圈角标使用。
+     * </p>
+     */
+    @GetMapping("/unread-count")
+    public Result<Long> unreadCount() {
+        return Result.success(notificationService.countUnread(UserContext.getUserId()));
+    }
+
     @PutMapping("/{id}/read")
     public Result<Void> markAsRead(@PathVariable Long id) {
-        // userId 从 UserContext 中获取，Service 层处理
-        notificationService.markAsRead(id, com.zjw.booknexus.utils.UserContext.getUserId());
+        notificationService.markAsRead(id, UserContext.getUserId());
         return Result.success();
     }
 }

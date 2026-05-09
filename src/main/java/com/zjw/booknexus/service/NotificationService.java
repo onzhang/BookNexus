@@ -37,6 +37,11 @@ public interface NotificationService {
     void markAsRead(Long id, Long userId);
 
     /**
+     * 查询当前用户的未读通知数量。
+     */
+    long countUnread(Long userId);
+
+    /**
      * 创建通知并实时推送给指定用户。
      * <p>
      * 将通知持久化到数据库，然后通过 SSE 推送给在线用户。

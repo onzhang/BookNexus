@@ -124,6 +124,14 @@ public class NotificationServiceImpl implements NotificationService {
         return vo;
     }
 
+    @Override
+    public long countUnread(Long userId) {
+        return notificationMapper.selectCount(
+                new LambdaQueryWrapper<Notification>()
+                        .eq(Notification::getUserId, userId)
+                        .eq(Notification::getIsRead, 0));
+    }
+
     /**
      * 将通知实体转换为视图对象。
      *
