@@ -10,13 +10,18 @@
   <div class="profile-page">
     <el-card v-loading="loading" shadow="hover" class="profile-card">
       <template #header>
-        <span class="card-title">个人中心</span>
+        <div class="card-header">
+          <span class="card-title">个人中心</span>
+          <el-button v-if="!isEditing" type="primary" size="small" @click="enterEdit">
+            编辑资料
+          </el-button>
+        </div>
       </template>
 
       <template v-if="!loading && userInfo">
-        <!-- 用户头像和姓名 -->
+        <!-- 头像区域 -->
         <div class="profile-header">
-          <el-avatar :size="80" :src="userInfo.avatarUrl || undefined" class="profile-avatar">
+          <el-avatar :size="80" :src="avatarSrc" class="profile-avatar">
             {{ userInfo.username?.charAt(0)?.toUpperCase() || 'U' }}
           </el-avatar>
           <div class="profile-name">
@@ -27,7 +32,6 @@
           </div>
         </div>
 
-        <!-- 头像上传 -->
         <div class="avatar-upload">
           <input
             type="file"
@@ -36,13 +40,28 @@
             ref="fileInput"
             @change="handleAvatarChange"
           />
-          <el-button size="small" type="primary" @click="fileInput?.click()">
+          <el-button size="small" @click="fileInput?.click()">
             上传头像
           </el-button>
         </div>
 
-        <!-- 编辑表单 -->
+        <!-- 查看模式 -->
+        <el-descriptions v-if="!isEditing" :column="1" border class="profile-info">
+          <el-descriptions-item label="用户名">{{ userInfo.username }}</el-descriptions-item>
+          <el-descriptions-item label="邮箱">{{ userInfo.email || '未填写' }}</el-descriptions-item>
+          <el-descriptions-item label="手机号">{{ userInfo.phone || '未填写' }}</el-descriptions-item>
+          <el-descriptions-item label="角色">{{ roleText }}</el-descriptions-item>
+          <el-descriptions-item label="注册时间">{{ userInfo.createdAt }}</el-descriptions-item>
+          <el-descriptions-item label="账号状态">
+            <el-tag :type="userInfo.status === 'ENABLED' ? 'success' : 'danger'" size="small">
+              {{ userInfo.status === 'ENABLED' ? '正常' : '禁用' }}
+            </el-tag>
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <!-- 编辑模式 -->
         <el-form
+          v-else
           ref="formRef"
           :model="form"
           :rules="rules"
@@ -53,36 +72,17 @@
           <el-form-item label="用户名" prop="username">
             <el-input v-model="form.username" placeholder="请输入用户名" />
           </el-form-item>
-
           <el-form-item label="邮箱" prop="email">
             <el-input v-model="form.email" placeholder="请输入邮箱" />
           </el-form-item>
-
           <el-form-item label="手机号" prop="phone">
             <el-input v-model="form.phone" placeholder="请输入手机号" />
           </el-form-item>
-
-          <el-form-item label="角色">
-            <el-input :model-value="roleText" disabled />
-          </el-form-item>
-
           <el-form-item>
-            <el-button type="primary" @click="handleSubmit" :loading="submitting">
-              保存修改
-            </el-button>
-            <el-button @click="resetForm">重置</el-button>
+            <el-button type="primary" @click="handleSubmit" :loading="submitting">保存</el-button>
+            <el-button @click="cancelEdit">取消</el-button>
           </el-form-item>
         </el-form>
-
-        <!-- 只读信息 -->
-        <el-descriptions :column="1" border class="profile-descriptions">
-          <el-descriptions-item label="注册时间">{{ userInfo.createdAt }}</el-descriptions-item>
-          <el-descriptions-item label="账号状态">
-            <el-tag :type="userInfo.status === 'ENABLED' ? 'success' : 'danger'" size="small">
-              {{ userInfo.status === 'ENABLED' ? '正常' : '禁用' }}
-            </el-tag>
-          </el-descriptions-item>
-        </el-descriptions>
       </template>
 
       <el-empty v-if="!loading && !userInfo" description="无法获取用户信息" />
@@ -100,26 +100,20 @@ import { useUserStore } from '@/stores/user'
 import type { User } from '@/types'
 
 const userStore = useUserStore()
-/** 页面加载状态 */
 const loading = ref(false)
-/** 提交加载状态 */
 const submitting = ref(false)
-/** 表单引用 */
+const isEditing = ref(false)
 const formRef = ref<FormInstance>()
-/** 文件输入引用 */
 const fileInput = ref<HTMLInputElement>()
 
-/** 当前用户信息（从 Store 获取） */
 const userInfo = ref<User | null>(userStore.userInfo)
 
-/** 表单数据 */
 const form = reactive({
   username: '',
   email: '',
   phone: ''
 })
 
-/** 表单验证规则 */
 const rules: FormRules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
@@ -130,14 +124,17 @@ const rules: FormRules = {
   ]
 }
 
-/** 角色中文文本 */
-const roleText = computed(() => {
-  return userInfo.value?.role === 'ADMIN' ? '管理员' : '普通用户'
+const roleText = computed(() => userInfo.value?.role === 'ADMIN' ? '管理员' : '普通用户')
+
+/** 头像 src：兼容旧格式(完整URL)和新格式(相对路径需走代理) */
+const avatarSrc = computed(() => {
+  const url = userInfo.value?.avatarUrl
+  if (!url) return undefined
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  if (url.startsWith('/api/v1/public/files/')) return url
+  return '/api/v1/public/files/' + url
 })
 
-/**
- * 初始化表单数据
- */
 function initForm() {
   const user = userInfo.value
   if (user) {
@@ -147,25 +144,27 @@ function initForm() {
   }
 }
 
-/**
- * 获取用户最新信息
- */
 async function fetchProfile() {
   loading.value = true
   try {
     await userStore.getInfo()
     userInfo.value = userStore.userInfo
     initForm()
-  } catch {
-    // Error already shown by interceptor
   } finally {
     loading.value = false
   }
 }
 
-/**
- * 提交表单
- */
+function enterEdit() {
+  initForm()
+  isEditing.value = true
+}
+
+function cancelEdit() {
+  isEditing.value = false
+  formRef.value?.clearValidate()
+}
+
 async function handleSubmit() {
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) return
@@ -177,42 +176,25 @@ async function handleSubmit() {
       email: form.email || undefined,
       phone: form.phone || undefined
     })
-    // 更新本地用户信息
     if (res.data.data && userInfo.value) {
       Object.assign(userInfo.value, res.data.data)
       userStore.userInfo = { ...userInfo.value }
       localStorage.setItem('booknexus_user', JSON.stringify(userInfo.value))
     }
+    isEditing.value = false
     ElMessage.success('资料更新成功')
-  } catch {
-    // Error already shown by interceptor
   } finally {
     submitting.value = false
   }
 }
 
-/**
- * 重置表单
- */
-function resetForm() {
-  initForm()
-  formRef.value?.clearValidate()
-}
-
-/**
- * 处理头像文件选择
- */
 async function handleAvatarChange(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
   if (!file) return
-
-  // 验证文件类型
   if (!file.type.startsWith('image/')) {
     ElMessage.error('请选择图片文件')
     return
   }
-
-  // 验证文件大小（5MB）
   if (file.size > 5 * 1024 * 1024) {
     ElMessage.error('图片大小不能超过 5MB')
     return
@@ -248,9 +230,15 @@ onMounted(() => {
   margin: 0 auto;
 
   .profile-card {
-    .card-title {
-      font-size: 16px;
-      font-weight: 600;
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      .card-title {
+        font-size: 16px;
+        font-weight: 600;
+      }
     }
   }
 
@@ -258,8 +246,8 @@ onMounted(() => {
     display: flex;
     align-items: center;
     gap: 20px;
-    margin-bottom: 24px;
-    padding-bottom: 20px;
+    margin-bottom: 8px;
+    padding-bottom: 16px;
     border-bottom: 1px solid var(--border-color);
 
     .profile-avatar {
@@ -282,17 +270,17 @@ onMounted(() => {
   .avatar-upload {
     display: flex;
     justify-content: center;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
+  }
+
+  .profile-info {
+    margin-top: 0;
   }
 
   .profile-form {
     max-width: 480px;
-    margin: 0 auto 24px;
+    margin: 0 auto;
     padding: 0 20px;
-  }
-
-  .profile-descriptions {
-    margin-bottom: 24px;
   }
 }
 </style>
